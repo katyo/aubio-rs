@@ -1,0 +1,36 @@
+[package]
+name = "aubio-sys"
+version = "0.1.0"
+description = "Unsafe bindings for aubio library to label music and sounds."
+categories = ["external-ffi-bindings", "multimedia::audio"]
+keywords = ["aubio", "audio", "processing", "recognition", "ffi"]
+authors = ["K. <kayo@illumium.org>"]
+license = "GPL-3.0"
+readme = "README.md"
+repository = "https://github.com/katyo/aubio-rs"
+edition = "2018"
+
+[badges]
+maintenance = { status = "experimental" }
+
+[build-dependencies.fetch_unroll]
+version = "0.1"
+optional = true
+
+[build-dependencies.git2]
+version = "0.11"
+optional = true
+
+[build-dependencies.bindgen]
+version = "0.52"
+optional = true
+
+[features]
+compile-library = ["git2"]
+generate-bindings = ["bindgen"]
+fetch-prebuilt = ["fetch_unroll"]
+dynamic-link = []
+rustdoc = []
+
+[package.metadata.docs.rs]
+features = ["rustdoc"]
