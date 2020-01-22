@@ -34,7 +34,7 @@ impl<'a> FVec<'a> {
         &self.fvec
     }
 
-    pub(crate) fn size(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.fvec.length as usize
     }
 
@@ -91,7 +91,7 @@ impl<'a> FVecMut<'a> {
         &mut self.fvec
     }
 
-    pub(crate) fn size(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.fvec.length as usize
     }
 
@@ -165,7 +165,7 @@ impl<'a> CVec<'a> {
         &self.cvec
     }
 
-    pub(crate) fn size(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.cvec.length as usize
     }
 
@@ -243,7 +243,7 @@ impl<'a> CVecMut<'a> {
         &mut self.cvec
     }
 
-    pub(crate) fn size(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.cvec.length as usize
     }
 

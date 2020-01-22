@@ -1,5 +1,4 @@
 use crate::{
-    Error,
     Result,
     Status,
 
@@ -14,12 +13,19 @@ use crate::{
 };
 
 /**
- * FFT object
+ * FFT (Fast Fourier Transformation) object
  *
  * This object computes forward and backward FFTs.
+ *
+ * Depending on how _aubio_ was compiled, FFT are computed using one of:
+ *
+ * - Ooura
+ * - FFTW3
+ * - vDSP
  */
 pub struct FFT {
     fft: *mut ffi::aubio_fft_t,
+    win_size: usize,
 }
 
 impl Drop for FFT {
@@ -37,17 +43,14 @@ impl FFT {
 
         check_alloc(fft)?;
 
-        Ok(Self {
-            fft,
-        })
+        Ok(Self { fft, win_size })
     }
 
     /**
      * Get window size
      */
     pub fn get_win(&self) -> usize {
-        // Hack for getting window size
-        (unsafe { *self.fft.cast::<ffi::uint_t>() }) as usize
+        self.win_size
     }
 
     /**

@@ -203,7 +203,7 @@ impl FromStr for PitchUnit {
  */
 pub struct Pitch {
     pitch: *mut ffi::aubio_pitch_t,
-    buf_size: usize,
+    hop_size: usize,
 }
 
 impl Drop for Pitch {
@@ -233,7 +233,7 @@ impl Pitch {
 
         check_alloc(pitch)?;
 
-        Ok(Self { pitch, buf_size })
+        Ok(Self { pitch, hop_size })
     }
 
     /**
@@ -261,14 +261,17 @@ impl Pitch {
     }
 
     /**
-     * Get buffser size
+     * Get hop size
      */
-    pub fn get_buf_size(&self) -> usize {
-        self.buf_size
+    pub fn get_hop(&self) -> usize {
+        self.hop_size
     }
 
     /**
      * Execute pitch detection on an input signal frame
+     *
+     * - `input` Input signal of size `hop_size`
+     * - `output` Output pitch candidates of size 1
      */
     pub fn do_<'i, 'o, I, O>(&mut self, input: I, output: O) -> Status
     where
@@ -278,7 +281,7 @@ impl Pitch {
         let input = input.into();
         let mut output = output.into();
 
-        input.check_size(self.get_buf_size())?;
+        input.check_size(self.get_hop())?;
         output.check_size(1)?;
 
         unsafe { ffi::aubio_pitch_do(self.pitch, input.as_ptr(), output.as_mut_ptr()); }
@@ -287,6 +290,8 @@ impl Pitch {
 
     /**
      * Execute pitch detection on an input signal frame
+     *
+     * - `input` Input signal of size `hop_size`
      */
     pub fn do_result<'i, I>(&mut self, input: I) -> Result<f32>
     where

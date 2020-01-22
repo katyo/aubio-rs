@@ -29,9 +29,17 @@ impl Drop for PVoc {
 impl PVoc {
     /**
      * Create phase vocoder object
+     *
+     * - `win_size` Size of analysis buffer (and length the FFT transform)
+     * - `hop_size` Step size between two consecutive analysis
      */
     pub fn new(win_size: usize, hop_size: usize) -> Result<Self> {
-        let pvoc = unsafe { ffi::new_aubio_pvoc(win_size as ffi::uint_t, hop_size as ffi::uint_t) };
+        let pvoc = unsafe {
+            ffi::new_aubio_pvoc(
+                win_size as ffi::uint_t,
+                hop_size as ffi::uint_t,
+            )
+        };
 
         check_alloc(pvoc)?;
 
@@ -69,6 +77,9 @@ impl PVoc {
      * After windowing of this signal window, the Fourier transform
      * is computed and returned in fftgrain as two vectors, magnitude
      * and phase.
+     *
+     * - `input` New input signal (`hop_size` long)
+     * - `fftgrain` Output spectral frame (`win_size` long)
      */
     pub fn do_<'i, 'o, I, O>(&mut self, input: I, fftgrain: O) -> Status
     where
@@ -91,6 +102,8 @@ impl PVoc {
      * This function takes an input spectral frame fftgrain of size `win_size`
      * and computes its inverse Fourier transform. Overlap-add synthesis is then
      * computed using the previously synthetised frames, and the output stored in out.
+     * - `fftgrain` Input spectral frame (`win_size` long)
+     * - `output` Output signal (`hop_size` long)
      */
     pub fn rdo<'i, 'o, I, O>(&mut self, fftgrain: I, output: O) -> Status
     where
