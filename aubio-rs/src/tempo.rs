@@ -3,7 +3,7 @@ use crate::{
     Status,
 
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         FVec,
         FVecMut,
@@ -42,7 +42,7 @@ impl Tempo {
             )
         };
 
-        check_alloc(tempo)?;
+        check_init(tempo)?;
 
         Ok(Self { tempo, hop_size })
     }

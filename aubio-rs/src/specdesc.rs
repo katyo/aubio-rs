@@ -4,7 +4,7 @@ use crate::{
     Status,
 
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         CVec,
         FVecMut,
@@ -165,7 +165,7 @@ impl SpecDesc {
             )
         };
 
-        check_alloc(specdesc)?;
+        check_init(specdesc)?;
 
         Ok(Self { specdesc })
     }

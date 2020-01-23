@@ -4,7 +4,7 @@ use crate::{
     Status,
 
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         FVec,
         FVecMut,
@@ -194,7 +194,7 @@ impl Onset {
             )
         };
 
-        check_alloc(onset)?;
+        check_init(onset)?;
 
         Ok(Self { onset })
     }

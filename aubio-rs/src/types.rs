@@ -10,9 +10,9 @@ use std::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     /**
-     * Failed to allocate object
+     * Failed to initialize object
      */
-    Allocation,
+    FailedInit,
 
     /**
      * Data size mismatched
@@ -30,7 +30,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         use self::Error::*;
         match self {
-            Allocation => "allocation error".fmt(f),
+            FailedInit => "creation error".fmt(f),
             MismatchSize => "data size mismatch".fmt(f),
             InvalidArg => "invalid argument".fmt(f),
         }
@@ -47,9 +47,9 @@ pub type Result<T> = StdResult<T, Error>;
  */
 pub type Status = Result<()>;
 
-pub(crate) fn check_alloc<T>(ptr: *mut T) -> Status {
+pub(crate) fn check_init<T>(ptr: *mut T) -> Status {
     if ptr.is_null() {
-        Err(Error::Allocation)
+        Err(Error::FailedInit)
     } else {
         Ok(())
     }

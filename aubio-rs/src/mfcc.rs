@@ -3,7 +3,7 @@ use crate::{
     Status,
 
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         CVec,
         FVecMut,
@@ -52,7 +52,7 @@ impl MFCC {
             )
         };
 
-        check_alloc(mfcc)?;
+        check_init(mfcc)?;
 
         Ok(Self { mfcc, buf_size, n_coeffs })
     }

@@ -4,7 +4,7 @@ use crate::{
 
     OnsetMode,
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         FVec,
         FVecMut,
@@ -66,7 +66,7 @@ impl Notes {
             )
         };
 
-        check_alloc(notes)?;
+        check_init(notes)?;
 
         Ok(Self { notes, hop_size })
     }

@@ -3,7 +3,7 @@ use crate::{
     Status,
 
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         FVec, FVecMut,
         CVec, CVecMut,
@@ -41,7 +41,7 @@ impl FFT {
     pub fn new(win_size: usize) -> Result<Self> {
         let fft = unsafe { ffi::new_aubio_fft(win_size as ffi::uint_t) };
 
-        check_alloc(fft)?;
+        check_init(fft)?;
 
         Ok(Self { fft, win_size })
     }

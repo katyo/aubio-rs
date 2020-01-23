@@ -6,7 +6,7 @@ use crate::{
     WindowType,
 
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         FVec, FVecMut,
         CVec, CVecMut,
@@ -41,7 +41,7 @@ impl PVoc {
             )
         };
 
-        check_alloc(pvoc)?;
+        check_init(pvoc)?;
 
         Ok(Self {
             pvoc

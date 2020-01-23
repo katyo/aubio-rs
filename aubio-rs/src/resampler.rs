@@ -4,7 +4,7 @@ use crate::{
     Status,
 
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         FVec,
         FVecMut,
@@ -101,7 +101,7 @@ impl Resampler {
             )
         };
 
-        check_alloc(resampler)?;
+        check_init(resampler)?;
 
         Ok(Self { resampler, ratio })
     }

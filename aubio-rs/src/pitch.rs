@@ -4,7 +4,7 @@ use crate::{
     Status,
 
     ffi,
-    check_alloc,
+    check_init,
     vec::{
         FVec,
         FVecMut,
@@ -231,7 +231,7 @@ impl Pitch {
             )
         };
 
-        check_alloc(pitch)?;
+        check_init(pitch)?;
 
         Ok(Self { pitch, hop_size })
     }
