@@ -3,6 +3,8 @@ use crate::{
     Result,
     Status,
 
+    AsNativeStr,
+
     ffi,
     check_init,
     vec::{
@@ -90,19 +92,25 @@ impl Default for PitchMode {
     }
 }
 
-impl AsRef<str> for PitchMode {
-    fn as_ref(&self) -> &'static str {
+impl AsNativeStr for PitchMode {
+    fn as_native_str(&self) -> &'static str {
         use self::PitchMode::*;
 
         match self {
-            Schmitt => "schmitt",
-            Fcomb => "fcomb",
-            Mcomb => "mcomb",
-            Yin => "yin",
-            Yinfast => "yinfast",
-            Yinfft => "yinfft",
-            Specacf => "specacf",
+            Schmitt => "schmitt\0",
+            Fcomb => "fcomb\0",
+            Mcomb => "mcomb\0",
+            Yin => "yin\0",
+            Yinfast => "yinfast\0",
+            Yinfft => "yinfft\0",
+            Specacf => "specacf\0",
         }
+    }
+}
+
+impl AsRef<str> for PitchMode {
+    fn as_ref(&self) -> &'static str {
+        self.as_rust_str()
     }
 }
 
@@ -163,16 +171,22 @@ impl Default for PitchUnit {
     }
 }
 
-impl AsRef<str> for PitchUnit {
-    fn as_ref(&self) -> &'static str {
+impl AsNativeStr for PitchUnit {
+    fn as_native_str(&self) -> &'static str {
         use self::PitchUnit::*;
 
         match self {
-            Hz => "hertz",
-            Midi => "midi",
-            Cent => "cent",
-            Bin => "bin",
+            Hz => "hertz\0",
+            Midi => "midi\0",
+            Cent => "cent\0",
+            Bin => "bin\0",
         }
+    }
+}
+
+impl AsRef<str> for PitchUnit {
+    fn as_ref(&self) -> &'static str {
+        self.as_rust_str()
     }
 }
 
@@ -224,7 +238,7 @@ impl Pitch {
     pub fn new(method: PitchMode, buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
         let pitch = unsafe {
             ffi::new_aubio_pitch(
-                method.as_ref().as_ptr() as *const _,
+                method.as_native_cstr(),
                 buf_size as ffi::uint_t,
                 hop_size as ffi::uint_t,
                 sample_rate as ffi::uint_t,
@@ -334,7 +348,7 @@ impl Pitch {
      * Set the output unit of the pitch detection object
      */
     pub fn set_unit(&mut self, unit: PitchUnit) {
-        unsafe { ffi::aubio_pitch_set_unit(self.pitch, unit.as_ref().as_ptr() as *const _); }
+        unsafe { ffi::aubio_pitch_set_unit(self.pitch, unit.as_native_cstr()); }
     }
 
     /**

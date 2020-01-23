@@ -1,6 +1,8 @@
 use crate::{
     Error,
     Result,
+
+    AsNativeStr,
 };
 
 use std::{
@@ -31,22 +33,28 @@ impl Default for WindowType {
     }
 }
 
-impl AsRef<str> for WindowType {
-    fn as_ref(&self) -> &'static str {
+impl AsNativeStr for WindowType {
+    fn as_native_str(&self) -> &'static str {
         use self::WindowType::*;
 
         match self {
-            Ones => "ones",
-            Rectangle => "rectangle",
-            Hamming => "hamming",
-            Hanning => "hanning",
-            Hanningz => "hanningz",
-            Blackman => "blackman",
-            BlackmanHarris => "blackman_harris",
-            Gaussian => "gaussian",
-            Welch => "welch",
-            Parzen => "parzen",
+            Ones => "ones\0",
+            Rectangle => "rectangle\0",
+            Hamming => "hamming\0",
+            Hanning => "hanning\0",
+            Hanningz => "hanningz\0",
+            Blackman => "blackman\0",
+            BlackmanHarris => "blackman_harris\0",
+            Gaussian => "gaussian\0",
+            Welch => "welch\0",
+            Parzen => "parzen\0",
         }
+    }
+}
+
+impl AsRef<str> for WindowType {
+    fn as_ref(&self) -> &'static str {
+        self.as_rust_str()
     }
 }
 

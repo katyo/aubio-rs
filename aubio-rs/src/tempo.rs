@@ -35,7 +35,7 @@ impl Tempo {
     pub fn new(buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
         let tempo = unsafe {
             ffi::new_aubio_tempo(
-                "default".as_ptr() as *const _,
+                "default\0".as_ptr() as *const _,
                 buf_size as ffi::uint_t,
                 hop_size as ffi::uint_t,
                 sample_rate as ffi::uint_t,

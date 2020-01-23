@@ -3,6 +3,7 @@ use crate::{
     Result,
     Status,
 
+    AsNativeStr,
     WindowType,
 
     ffi,
@@ -125,9 +126,7 @@ impl PVoc {
      * Set window type
      */
     pub fn set_window(&mut self, window_type: WindowType) -> Status {
-        let window_type = window_type.as_ref().as_ptr();
-
-        if 0 == unsafe { ffi::aubio_pvoc_set_window(self.pvoc, window_type as *const _) } {
+        if 0 == unsafe { ffi::aubio_pvoc_set_window(self.pvoc, window_type.as_native_cstr()) } {
             Ok(())
         } else {
             Err(Error::InvalidArg)

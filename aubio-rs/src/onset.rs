@@ -3,14 +3,15 @@ use crate::{
     Result,
     Status,
 
+    AsNativeStr,
+    SpecMethod,
+
     ffi,
     check_init,
     vec::{
         FVec,
         FVecMut,
     },
-
-    SpecFunc,
 };
 
 use std::{
@@ -91,9 +92,23 @@ pub enum OnsetMode {
     SpecFlux,
 }
 
-impl SpecFunc for OnsetMode {
-    fn func_name(&self) -> &str {
-        self.as_ref()
+impl SpecMethod for OnsetMode {}
+
+impl AsNativeStr for OnsetMode {
+    fn as_native_str(&self) -> &'static str {
+        use self::OnsetMode::*;
+
+        match self {
+            Energy => "energy\0",
+            Hfc => "hfc\0",
+            Complex => "complex\0",
+            Phase => "phase\0",
+            WPhase => "wphase\0",
+            Mkl => "mkl\0",
+            Kl => "kl\0",
+            SpecFlux => "specflux\0",
+            SpecDiff => "specdiff\0",
+        }
     }
 }
 
@@ -104,20 +119,8 @@ impl Default for OnsetMode {
 }
 
 impl AsRef<str> for OnsetMode {
-    fn as_ref(&self) -> &'static str {
-        use self::OnsetMode::*;
-
-        match self {
-            Energy => "energy",
-            Hfc => "hfc",
-            Complex => "complex",
-            Phase => "phase",
-            WPhase => "wphase",
-            Mkl => "mkl",
-            Kl => "kl",
-            SpecFlux => "specflux",
-            SpecDiff => "specdiff",
-        }
+    fn as_ref(&self) -> &str {
+        self.as_rust_str()
     }
 }
 
@@ -180,7 +183,7 @@ impl Onset {
     pub fn new(method: OnsetMode, buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
         let onset = unsafe {
             ffi::new_aubio_onset(
-                method.as_ref().as_ptr() as *const _,
+                method.as_native_cstr(),
                 buf_size as ffi::uint_t,
                 hop_size as ffi::uint_t,
                 sample_rate as ffi::uint_t,
@@ -505,7 +508,7 @@ impl Onset {
         unsafe {
             ffi::aubio_onset_set_default_parameters(
                 self.onset,
-                mode.as_ref().as_ptr() as *const _
+                mode.as_native_cstr(),
             );
         }
     }

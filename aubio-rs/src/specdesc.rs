@@ -3,6 +3,8 @@ use crate::{
     Result,
     Status,
 
+    AsNativeStr,
+
     ffi,
     check_init,
     vec::{
@@ -19,9 +21,7 @@ use std::{
 /**
  * Spectral description function
  */
-pub trait SpecFunc {
-    fn func_name(&self) -> &str;
-}
+pub trait SpecMethod: AsNativeStr {}
 
 /**
  * Spectral shape descriptor
@@ -90,25 +90,27 @@ pub enum SpecShape {
     Rolloff,
 }
 
-impl SpecFunc for SpecShape {
-    fn func_name(&self) -> &str {
-        self.as_ref()
+impl SpecMethod for SpecShape {}
+
+impl AsNativeStr for SpecShape {
+    fn as_native_str(&self) -> &'static str {
+        use self::SpecShape::*;
+
+        match self {
+            Centroid => "centroid\0",
+            Spread => "spread\0",
+            Skewness => "skewness\0",
+            Kurtosis => "kurtosis\0",
+            Slope => "slope\0",
+            Decrease => "decrease\0",
+            Rolloff => "rolloff\0",
+        }
     }
 }
 
 impl AsRef<str> for SpecShape {
-    fn as_ref(&self) -> &'static str {
-        use self::SpecShape::*;
-
-        match self {
-            Centroid => "centroid",
-            Spread => "spread",
-            Skewness => "skewness",
-            Kurtosis => "kurtosis",
-            Slope => "slope",
-            Decrease => "decrease",
-            Rolloff => "rolloff",
-        }
+    fn as_ref(&self) -> &str {
+        self.as_rust_str()
     }
 }
 
@@ -157,10 +159,10 @@ impl SpecDesc {
      * - `method` Spectral description method
      * - `buf_size` Length of the input spectrum frame
      */
-    pub fn new<M: SpecFunc>(method: M, buf_size: usize) -> Result<Self> {
+    pub fn new<M: SpecMethod>(method: M, buf_size: usize) -> Result<Self> {
         let specdesc = unsafe {
             ffi::new_aubio_specdesc(
-                method.func_name().as_ptr() as *const _,
+                method.as_native_cstr(),
                 buf_size as ffi::uint_t,
             )
         };

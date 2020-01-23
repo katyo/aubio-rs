@@ -2,7 +2,9 @@ use crate::{
     Result,
     Status,
 
+    AsNativeStr,
     OnsetMode,
+
     ffi,
     check_init,
     vec::{
@@ -59,7 +61,7 @@ impl Notes {
     pub fn new(method: OnsetMode, buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
         let notes = unsafe {
             ffi::new_aubio_notes(
-                method.as_ref().as_ptr() as *const _,
+                method.as_native_cstr(),
                 buf_size as ffi::uint_t,
                 hop_size as ffi::uint_t,
                 sample_rate as ffi::uint_t,
