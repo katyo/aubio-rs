@@ -7,4 +7,4 @@
 
 This crate provides generated unsafe Rust bindings for [_aubio_](//github.com/aubio/aubio) C library.
 
-Probably this isn't that you need. See [safe bindings](https://crates.io/crates/aubio-sys).
+Probably this isn't that you need. See [safe bindings](https://crates.io/crates/aubio-rs).
