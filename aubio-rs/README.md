@@ -3,7 +3,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-brightgreen.svg)](https://opensource.org/licenses/GPL-3.0)
 [![Crates.io Package](https://img.shields.io/crates/v/aubio-rs.svg?style=popout)](https://crates.io/crates/aubio-rs)
 [![Docs.rs API Docs](https://docs.rs/aubio-rs/badge.svg)](https://docs.rs/aubio-rs)
-[![Travis-CI Status](https://travis-ci.org/katyo/aubio-rs.svg?branch=master)](https://travis-ci.org/katyo/aubio-rs)
+[![Travis-CI Status](https://travis-ci.com/katyo/aubio-rs.svg?branch=master)](https://travis-ci.com/katyo/aubio-rs)
 
 This projects aims provide safe Rust bindings for [_aubio_](//github.com/aubio/aubio) C library.
 
