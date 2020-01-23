@@ -6,10 +6,15 @@ in stdenv.mkDerivation {
 
   buildInputs = [
     pkgconfig
-    libav
-    libsndfile
-    libsamplerate
-    fftw
-    jack2
+    #libav
+    #libsndfile
+    #libsamplerate
+    #fftw
+    #fftwFloat
+    #jack2
+
+    # build deps
+    openssl
+    gnupg
   ];
 }

@@ -12,13 +12,11 @@ use std::process::{
     Output,
 };
 
-#[cfg(not(feature = "compile-library"))]
-use std::str::from_utf8;
-
 use std::{
     env,
     path::{Path, PathBuf},
     fs::metadata,
+    str::from_utf8,
 };
 
 enum LinkArg {
@@ -274,9 +272,99 @@ fn select_library<S: AsRef<str>>(pkg_name: S, out_dir: &Path) -> Vec<LinkArg> {
 
 #[cfg(feature = "compile-library")]
 fn compile_library(lib_src: &Path) -> Vec<LinkArg> {
-    let lib_name = "aubio";
+    let lib_name = String::from("aubio");
 
-    match Command::new("make").current_dir(lib_src).output() {
+    /*
+WAF Options:
+  --build-type=BUILD_TYPE
+                        whether to compile with (--build-type=release) or without (--build-type=debug) compiler opimizations
+                        [default: release]
+  --debug               build in debug mode (see --build-type)
+  --enable-fftw3f       compile with fftw3f instead of ooura (recommended)
+  --disable-fftw3f      do not compile with fftw3f
+  --enable-fftw3        compile with fftw3 instead of ooura
+  --disable-fftw3       do not compile with fftw3
+  --enable-intelipp     use Intel IPP libraries (auto)
+  --disable-intelipp    do not use Intel IPP libraries
+  --enable-complex      compile with C99 complex
+  --disable-complex     do not use C99 complex (default)
+  --enable-jack         compile with jack (auto)
+  --disable-jack        disable jack support
+  --enable-sndfile      compile with sndfile (auto)
+  --disable-sndfile     disable sndfile
+  --enable-avcodec      compile with libavcodec (auto)
+  --disable-avcodec     disable libavcodec
+  --enable-samplerate   compile with samplerate (auto)
+  --disable-samplerate  disable samplerate
+  --enable-memcpy       use memcpy hacks (default)
+  --disable-memcpy      do not use memcpy hacks
+  --enable-double       compile in double precision mode
+  --disable-double      compile in single precision mode (default)
+  --enable-fat          build fat binaries (darwin only)
+  --disable-fat         do not build fat binaries (default)
+  --enable-accelerate   use Accelerate framework (darwin only) (auto)
+  --disable-accelerate  do not use Accelerate framework
+  --enable-apple-audio  use CoreFoundation (darwin only) (auto)
+  --disable-apple-audio
+                        do not use CoreFoundation framework
+  --enable-blas         use BLAS acceleration library (no)
+  --disable-blas        do not use BLAS library
+  --enable-atlas        use ATLAS acceleration library (no)
+  --disable-atlas       do not use ATLAS library
+  --enable-wavread      compile with source_wavread (default)
+  --disable-wavread     do not compile source_wavread
+  --enable-wavwrite     compile with source_wavwrite (default)
+  --disable-wavwrite    do not compile source_wavwrite
+  --enable-docs         build documentation (auto)
+  --disable-docs        do not build documentation
+  --enable-tests        build tests (true)
+  --disable-tests       do not build or run tests
+  --enable-examples     build examples (true)
+  --disable-examples    do not build examples
+  --with-target-platform=TARGET_PLATFORM
+                        set target platform for cross-compilation
+  --notests             Exec no unit tests
+  --alltests            Exec all unit tests
+  --clear-failed        Force failed unit tests to run again next time
+  --testcmd=TESTCMD     Run the unit tests using the test-cmd string example "--testcmd="valgrind --error-exitcode=1 %s" to run
+                        under valgrind
+  --dump-test-scripts   Create python scripts to help debug tests
+
+  Configuration options:
+    -o OUT, --out=OUT   build dir for the project
+    -t TOP, --top=TOP   src dir for the project
+    --check-c-compiler=CHECK_C_COMPILER
+                        list of C compilers to try [gcc clang icc]
+     */
+
+    let mut wafopts = String::new();
+
+    wafopts.push_str(" --build-type=");
+    wafopts.push_str(&env::var("PROFILE").expect("PROFILE env var is set by cargo."));
+
+    let flags = [
+        ("docs", false),
+        ("tests", false),
+        ("examples", false),
+
+        ("fftw3f", cfg!(feature = "with-fftw3f")),
+        ("fftw3", cfg!(feature = "with-fftw3")),
+
+        ("wavread", cfg!(feature = "with-wav")),
+        ("wavwrite", cfg!(feature = "with-wav")),
+
+        ("jack", cfg!(feature = "with-jack")),
+        ("sndfile", cfg!(feature = "with-sndfile")),
+        ("avcodec", cfg!(feature = "with-avcodec")),
+        ("samplerate", cfg!(feature = "with-samplerate")),
+    ];
+
+    for &(flag, state) in &flags {
+        wafopts.push_str(if state { " --enable-" } else { " --disable-" });
+        wafopts.push_str(flag);
+    }
+
+    match Command::new("make").current_dir(lib_src).env("WAFOPTS", wafopts).output() {
         Err(error) => {
             panic!("Error: Unable to execute `make` to build '{}' library due to: {}", lib_name, error);
         },
@@ -289,15 +377,17 @@ fn compile_library(lib_src: &Path) -> Vec<LinkArg> {
     }
 
     vec![
-        SearchPath(format!("{}/lib", lib_src)),
+        SearchPath(format!("{}/build/src", lib_src.display())),
         if cfg!(feature = "static-link") { StaticLib(lib_name) } else { SharedLib(lib_name) },
     ]
 }
 
 #[cfg(any(/*feature = "generate-bindings", */feature = "compile-library"))]
 fn fetch_aubio(out_dir: &Path) { // clonning aubio git repo
-    let repo = "https://github.com/aubio/aubio";
-    let version = "master";
+    //let repo = "https://github.com/aubio/aubio";
+    //let version = "master";
+    let repo = "https://github.com/katyo/aubio";
+    let version = "fix-shebang";
 
     let url = env::var("AUBIO_GIT_URL")
         .unwrap_or_else(|_| repo.into());

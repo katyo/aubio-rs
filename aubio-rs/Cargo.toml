@@ -17,12 +17,6 @@ maintenance = { status = "experimental" }
 version = "0.1.0"
 path = "../aubio-sys"
 
-#[dependencies.typenum]
-#version = "^1.11"
-
-#[dependencies.generic-array]
-#version = "^0.13"
-
 [features]
 compile-library = ["aubio-sys/compile-library"]
 generate-bindings = ["aubio-sys/generate-bindings"]
@@ -30,6 +24,14 @@ fetch-prebuilt = ["aubio-sys/fetch-prebuilt"]
 dynamic-link = ["aubio-sys/dynamic-link"]
 rustdoc = ["aubio-sys/rustdoc"]
 check-size = []
+
+with-fftw3f = ["aubio-sys/with-fftw3f"]
+with-fftw3 = ["aubio-sys/with-fftw3"]
+with-wav = ["aubio-sys/with-wav"]
+with-jack = ["aubio-sys/with-jack"]
+with-sndfile = ["aubio-sys/with-sndfile"]
+with-avcodec = ["aubio-sys/with-avcodec"]
+with-samplerate = ["aubio-sys/with-samplerate"]
 
 [package.metadata.docs.rs]
 features = ["rustdoc"]

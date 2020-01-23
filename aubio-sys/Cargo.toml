@@ -32,5 +32,13 @@ fetch-prebuilt = ["fetch_unroll"]
 dynamic-link = []
 rustdoc = []
 
+with-fftw3f = []
+with-fftw3 = []
+with-wav = []
+with-jack = []
+with-sndfile = []
+with-avcodec = []
+with-samplerate = []
+
 [package.metadata.docs.rs]
 features = ["rustdoc"]
