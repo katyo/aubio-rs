@@ -211,3 +211,55 @@ impl SpecDesc {
         Ok(desc[0])
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::*;
+
+    #[test]
+    fn test() {
+        const WIN: usize = 1024; // window size
+
+        let in_ = carr!(WIN); // input buffer
+        let mut out = farr!(1); // output spectral descriptor
+
+        let mut o = SpecDesc::new(OnsetMode::Energy, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(OnsetMode::Hfc, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(OnsetMode::Complex, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(OnsetMode::Phase, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(OnsetMode::Kl, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(OnsetMode::Mkl, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(SpecShape::Centroid, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(SpecShape::Spread, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(SpecShape::Skewness, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(SpecShape::Kurtosis, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(SpecShape::Slope, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(SpecShape::Decrease, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+
+        let mut o = SpecDesc::new(SpecShape::Rolloff, WIN).unwrap();
+        o.do_(in_.as_ref(), out.as_mut()).unwrap();
+    }
+}

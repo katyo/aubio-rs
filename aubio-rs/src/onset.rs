@@ -520,3 +520,31 @@ impl Onset {
         unsafe { ffi::aubio_onset_reset(self.onset); }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::*;
+
+    #[test]
+    fn test() {
+        // TODO
+    }
+
+    #[test]
+    fn test_wrong_params() {
+        const WIN_S: usize = 1024;
+        const HOP_S: usize = WIN_S / 2;
+        const SAMPLERATE: u32 = 44100;
+        // HOP_S < 1
+        assert!(Onset::new(Default::default(), 5, 0, SAMPLERATE).is_err());
+        // buf_size < 2
+        assert!(Onset::new(Default::default(), 1, 1, SAMPLERATE).is_err());
+        // buf_size < HOP_S
+        assert!(Onset::new(Default::default(), HOP_S, WIN_S, SAMPLERATE).is_err());
+        // SAMPLERATE < 1
+        assert!(Onset::new(Default::default(), 1024, 512, 0).is_err());
+        // pv creation might fail
+        assert_eq!(Onset::new(Default::default(), 5, 2, SAMPLERATE).is_ok(),
+                   cfg!(any(feature = "with-fftw3", feature = "with-fftw3f")));
+    }
+}

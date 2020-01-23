@@ -72,7 +72,6 @@ impl FFT {
         let mut spectrum = spectrum.into();
 
         input.check_size(self.get_win())?;
-        spectrum.check_size(self.get_win())?;
 
         unsafe { ffi::aubio_fft_do(self.fft, input.as_ptr(), spectrum.as_mut_ptr()); }
         Ok(())
@@ -89,7 +88,6 @@ impl FFT {
         let spectrum = spectrum.into();
         let mut output = output.into();
 
-        spectrum.check_size(self.get_win())?;
         output.check_size(self.get_win())?;
 
         unsafe { ffi::aubio_fft_rdo(self.fft, spectrum.as_ptr(), output.as_mut_ptr()); }
@@ -232,5 +230,45 @@ impl FFT {
 
         unsafe { ffi::aubio_fft_get_real(spectrum.as_ptr(), compspec.as_mut_ptr()); }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::*;
+
+    #[test]
+    fn test() {
+        const ITERS: usize = 100; // number of iterations
+        const WIN: usize = 512; // window size
+
+        let mut in_ = [0f32; WIN]; // input buffer
+        //let mut in_ = farr!(WIN); // input buffer
+        //let mut fftgrain = [0f32; (WIN+1)*2]; // fft norm and phase
+        let mut fftgrain = carr!(WIN); // fft norm and phase
+        let mut out = [0.0; WIN]; // output buffer
+        // create fft object
+        let mut fft = FFT::new(WIN).unwrap();
+
+        // fill input with some data
+        in_[0] = 1.0;
+        in_[1] = 2.0;
+        in_[2] = 3.0;
+        in_[3] = 4.0;
+        in_[4] = 5.0;
+        in_[5] = 6.0;
+        in_[6] = 5.0;
+        in_[7] = 6.0;
+        println!("in: {:?}", in_.as_ref());
+
+        for _i in 0..ITERS {
+            // execute stft
+            fft.do_(in_.as_ref(), fftgrain.as_mut()).unwrap();
+            println!("fftgrain: {:?}", fftgrain.as_ref());
+            // execute inverse fourier transform
+            fft.rdo(fftgrain.as_ref(), out.as_mut()).unwrap();
+        }
+
+        println!("out: {:?}", out.as_ref());
     }
 }

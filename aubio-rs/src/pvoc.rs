@@ -133,3 +133,42 @@ impl PVoc {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::*;
+
+    #[test]
+    fn test() {
+        const WIN_S: usize = 32; // window size
+        const HOP_S: usize = WIN_S / 4; // hop size
+        let in_ = [1f32; HOP_S]; // input buffer
+        let mut fftgrain = carr!(WIN_S); // fft norm and phase
+        let mut out = farr!(HOP_S); // output buffer
+        // allocate fft and other memory space
+        let mut pv = PVoc::new(WIN_S, HOP_S).unwrap();
+
+        assert!(PVoc::new(WIN_S, 0).is_err());
+        assert_eq!(pv.get_win(), WIN_S);
+        assert_eq!(pv.get_hop(), HOP_S);
+
+        pv.set_window(WindowType::Hanningz).unwrap();
+
+        // compute 6 times
+        for _i in 0..6 {
+            // get some fresh input data
+            // ..
+            // execute phase vocoder
+            pv.do_(in_.as_ref(), fftgrain.as_mut()).unwrap();
+            // do something with fftgrain
+            // ...
+            println!("fftgrain: {:?}", fftgrain.as_ref());
+
+            // optionally rebuild the signal
+            pv.rdo(fftgrain.as_ref(), out.as_mut()).unwrap();
+            // and do something with the result
+            // ...
+            println!("out: {:?}", out);
+        }
+    }
+}
