@@ -1,4 +1,4 @@
-#[cfg(any(/*feature = "generate-bindings", */feature = "compile-library"))]
+#[cfg(feature = "compile-library")]
 use git2::build::RepoBuilder;
 
 #[cfg(feature = "fetch-prebuilt")]
@@ -33,10 +33,11 @@ fn main() {
             env::var("OUT_DIR").expect("OUT_DIR is set by cargo.")
         );
 
+        #[cfg(not(feature = "compile-library"))]
         let pkg_name = env::var("AUBIO_PKG").ok()
             .unwrap_or_else(|| "aubio".into());
 
-        #[cfg(any(/*feature = "generate-bindings", */feature = "compile-library"))]
+        #[cfg(feature = "compile-library")]
         let aubio_src = {
             let aubio_src = out_dir.join("aubio-src");
 
