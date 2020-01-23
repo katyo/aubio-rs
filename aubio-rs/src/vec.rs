@@ -53,24 +53,13 @@ impl<'a> FVec<'a> {
     }
 }
 
-impl<'a> From<&'a [f32]> for FVec<'a> {
-    fn from(data: &'a [f32]) -> Self {
+impl<'a, T: AsRef<[f32]>> From<T> for FVec<'a> {
+    fn from(data: T) -> Self {
+        let data = data.as_ref();
         Self {
             fvec: ffi::fvec_t {
                 length: data.len() as ffi::uint_t,
                 data: data.as_ptr() as *mut _,
-            },
-            _pd: PhantomData,
-        }
-    }
-}
-
-impl<'a> From<&'a f32> for FVec<'a> {
-    fn from(data: &'a f32) -> Self {
-        Self {
-            fvec: ffi::fvec_t {
-                length: 1,
-                data: data as *const _ as *mut _,
             },
             _pd: PhantomData,
         }
@@ -110,24 +99,13 @@ impl<'a> FVecMut<'a> {
     }
 }
 
-impl<'a> From<&'a mut [f32]> for FVecMut<'a> {
-    fn from(data: &'a mut [f32]) -> Self {
+impl<'a, T: AsMut<[f32]>> From<T> for FVecMut<'a> {
+    fn from(mut data: T) -> Self {
+        let data = data.as_mut();
         Self {
             fvec: ffi::fvec_t {
                 length: data.len() as ffi::uint_t,
                 data: data.as_mut_ptr(),
-            },
-            _pd: PhantomData,
-        }
-    }
-}
-
-impl<'a> From<&'a mut f32> for FVecMut<'a> {
-    fn from(data: &'a mut f32) -> Self {
-        Self {
-            fvec: ffi::fvec_t {
-                length: 1,
-                data: data as *mut _,
             },
             _pd: PhantomData,
         }
@@ -144,7 +122,9 @@ pub struct CVec<'a> {
 }
 
 impl<'a> CVec<'a> {
-    pub fn from_parts(norm: &[f32], phas: &[f32]) -> Result<Self> {
+    pub fn from_parts<T: AsRef<[f32]>>(norm: T, phas: T) -> Result<Self> {
+        let norm = norm.as_ref();
+        let phas = phas.as_ref();
         #[cfg(feature = "check-size")]
         {
             if norm.len() != phas.len() {
@@ -184,8 +164,10 @@ impl<'a> CVec<'a> {
     }
 }
 
-impl<'a> From<(&'a [f32], &'a [f32])> for CVec<'a> {
-    fn from((norm, phas): (&'a [f32], &'a [f32])) -> Self {
+impl<'a, T: AsRef<[f32]>> From<T> for CVec<'a> {
+    fn from(data: T) -> Self {
+        let data = data.as_ref();
+        let (norm, phas) = data.split_at(data.len()/2);
         Self::from_parts(norm, phas).unwrap()
     }
 }
@@ -200,7 +182,9 @@ pub struct CVecMut<'a> {
 }
 
 impl<'a> CVecMut<'a> {
-    pub fn from_parts(norm: &mut [f32], phas: &mut [f32]) -> Result<Self> {
+    pub fn from_parts<T: AsMut<[f32]>>(mut norm: T, mut phas: T) -> Result<Self> {
+        let norm = norm.as_mut();
+        let phas = phas.as_mut();
         #[cfg(feature = "check-size")]
         {
             if norm.len() != phas.len() {
@@ -262,8 +246,10 @@ impl<'a> CVecMut<'a> {
     }
 }
 
-impl<'a> From<(&'a mut [f32], &'a mut [f32])> for CVecMut<'a> {
-    fn from((norm, phas): (&'a mut [f32], &'a mut [f32])) -> Self {
+impl<'a, T: AsMut<[f32]>> From<T> for CVecMut<'a> {
+    fn from(mut data: T) -> Self {
+        let data = data.as_mut();
+        let (norm, phas) = data.split_at_mut(data.len()/2);
         Self::from_parts(norm, phas).unwrap()
     }
 }
@@ -290,8 +276,9 @@ impl<'a> DerefMut for CVecNormMut<'a> {
     }
 }
 
-impl<'a> From<&'a mut [f32]> for CVecNormMut<'a> {
-    fn from(norm: &'a mut [f32]) -> Self {
+impl<'a, T: AsMut<[f32]>> From<T> for CVecNormMut<'a> {
+    fn from(mut data: T) -> Self {
+        let norm = data.as_mut();
         Self { cvec: CVecMut::from_norm(norm) }
     }
 }
@@ -318,8 +305,9 @@ impl<'a> DerefMut for CVecPhasMut<'a> {
     }
 }
 
-impl<'a> From<&'a mut [f32]> for CVecPhasMut<'a> {
-    fn from(norm: &'a mut [f32]) -> Self {
-        Self { cvec: CVecMut::from_phas(norm) }
+impl<'a, T: AsMut<[f32]>> From<T> for CVecPhasMut<'a> {
+    fn from(mut data: T) -> Self {
+        let phas = data.as_mut();
+        Self { cvec: CVecMut::from_phas(phas) }
     }
 }

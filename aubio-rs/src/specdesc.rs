@@ -204,8 +204,8 @@ impl SpecDesc {
     where
         I: Into<CVec<'i>>,
     {
-        let mut desc = 0f32;
+        let mut desc = [0f32; 1];
         self.do_(fftgrain, &mut desc)?;
-        Ok(desc)
+        Ok(desc[0])
     }
 }

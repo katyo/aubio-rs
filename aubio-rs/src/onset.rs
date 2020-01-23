@@ -307,9 +307,9 @@ impl Onset {
     where
         I: Into<FVec<'i>>,
     {
-        let mut onset = 0f32;
+        let mut onset = [0f32; 1];
         self.do_(input, &mut onset)?;
-        Ok(onset)
+        Ok(onset[0])
     }
 
     /**

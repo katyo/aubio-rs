@@ -297,9 +297,9 @@ impl Pitch {
     where
         I: Into<FVec<'i>>,
     {
-        let mut output = 0f32;
+        let mut output = [0f32; 1];
         self.do_(input, &mut output)?;
-        Ok(output)
+        Ok(output[0])
     }
 
     /**
