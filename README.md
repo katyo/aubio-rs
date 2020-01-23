@@ -36,12 +36,15 @@ This projects aims provide safe Rust bindings for [_aubio_](//github.com/aubio/a
 
 ## Crate features
 
-Pre-generated bindings and pre-compiled library supported for the following rust targets:
+Pre-generated bindings supported for the following architectures:
 
 * __x86__
 * __x86_64__
 * __arm__
 * __aarch64__
+* __mips__
+* __mips64__
+* __wasm32__
 
 By default the installed _aubio_ C library will be used.
 
@@ -52,7 +55,7 @@ of library.
 The `AUBIO_INCLUDEDIR` environment variable can help specify path
 to C headers of library.
 
-Following features can be used to customize configuration:
+The following features can be used to customize configuration:
 
 * _generate-bindings_ which runs bindgen to generate bindings
 * _compile-library_ which clones and builds _aubio_ C library
