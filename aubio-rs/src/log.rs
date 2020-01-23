@@ -7,6 +7,7 @@ use std::{
     sync::{Arc, RwLock, Once},
     collections::HashMap,
     mem::MaybeUninit,
+    fmt::{Display, Formatter, Result as FmtResult},
 };
 
 /**
@@ -72,6 +73,25 @@ impl LogLevel {
         }
 
         log_functions().store(Some(*self), func);
+    }
+}
+
+impl AsRef<str> for LogLevel {
+    fn as_ref(&self) -> &str {
+        use self::LogLevel::*;
+        match self {
+            Error => "ERROR",
+            Info => "INFO",
+            Message => "MESSAGE",
+            Debug => "DEBUG",
+            Warning => "WARNING",
+        }
+    }
+}
+
+impl Display for LogLevel {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        self.as_ref().fmt(f)
     }
 }
 
