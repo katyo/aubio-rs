@@ -59,3 +59,17 @@ pub use self::notes::*;
 pub use self::mfcc::*;
 pub use self::resampler::*;
 pub use self::log::*;
+
+#[macro_export]
+macro_rules! farr {
+    ($len: expr) => {
+        [0f32; $len]
+    };
+}
+
+#[macro_export]
+macro_rules! carr {
+    ($len: expr) => {
+        [0f32; $len+2]
+    };
+}
