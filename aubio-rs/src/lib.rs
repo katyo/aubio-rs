@@ -28,6 +28,48 @@
  * > The name _aubio_ comes from audio with a typo: some errors are likely
  * > to be found in the results.
  *
+ * ## Crate features
+ *
+ * The following features can be used to customize configuration:
+ *
+ * - _generate-bindings_ which runs __bindgen__ to generate bindings (_useful for unsupported archs_)
+ * - _compile-library_ which clones source from __git__ and builds _aubio_ C library
+ * - _fetch-prebuilt_ which forces to fetch prebuilt library (_currently not supported_)
+ * - _dynamic-link_ which forces to use dynamic linking instead of static
+ *
+ * By default the installed _aubio_ C library will be used.
+ *
+ * You may provide `AUBIO_LIBDIR` environment variable to specify path
+ * to precompiled _aubio_ C libraries.
+ * Also `AUBIO_LIB` environment variable may be used to override the name
+ * of library.
+ * The `AUBIO_INCLUDEDIR` environment variable can help specify path
+ * to C headers of library.
+ *
+ * The following features can be used to customize library configuration:
+ *
+ * - _with-fftw3f_ Enables floating-point __fftw3__ support
+ * - _with-fftw3_ Enables __fftw3__ support
+ * - _with-wav_ Enables _wavread_/_wavwrite_ support
+ * - _with-jack_ Enables __jack__ support
+ * - _with-sndfile_ Enables __libsndfile__ support
+ * - _with-avcodec_ Enables __libavcodec__ support
+ * - _with-samplerate_ Enables __libsamplerate__ support
+ *
+ * Pre-generated bindings supported for the following architectures:
+ *
+ * - __x86__
+ * - __x86_64__
+ * - __arm__
+ * - __aarch64__
+ * - __mips__
+ * - __mips64__
+ * - __powerpc__
+ * - __powerpc64__
+ * - __sparc__ _(currently blacklisted)_
+ * - __sparc64__
+ * - __wasm32__
+ *
  */
 
 pub(crate) use aubio_sys as ffi;
@@ -42,6 +84,7 @@ mod pitch;
 mod tempo;
 mod notes;
 mod mfcc;
+#[cfg(feature = "with-samplerate")]
 mod resampler;
 mod log;
 
@@ -57,6 +100,7 @@ pub use self::pitch::*;
 pub use self::tempo::*;
 pub use self::notes::*;
 pub use self::mfcc::*;
+#[cfg(feature = "with-samplerate")]
 pub use self::resampler::*;
 pub use self::log::*;
 

@@ -1,4 +1,4 @@
-# Aubio library bindings
+# Safe _aubio_ library bindings
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-brightgreen.svg)](https://opensource.org/licenses/GPL-3.0)
 [![Crates.io Package](https://img.shields.io/crates/v/aubio-rs.svg?style=popout)](https://crates.io/crates/aubio-rs)
