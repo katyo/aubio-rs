@@ -89,11 +89,6 @@ pub enum OnsetMode {
      * Simon Dixon, Onset Detection Revisited, in "Proceedings of the 9th International Conference on Digital Audio Effects" (DAFx-06), Montreal, Canada, 2006.
      */
     SpecFlux,
-
-    /**
-     * Old default detection method
-     */
-    Old,
 }
 
 impl SpecFunc for OnsetMode {
@@ -122,7 +117,6 @@ impl AsRef<str> for OnsetMode {
             Kl => "kl",
             SpecFlux => "specflux",
             SpecDiff => "specdiff",
-            Old => "old_default",
         }
     }
 }
@@ -149,7 +143,6 @@ impl FromStr for OnsetMode {
             "kl" => Kl,
             "specflux" => SpecFlux,
             "specdiff" => SpecDiff,
-            "old_default" => Old,
             _ => return Err(Error::InvalidArg),
         })
     }
