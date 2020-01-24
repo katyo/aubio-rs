@@ -4,10 +4,8 @@ use crate::{
 
 use std::{
     ffi::{c_void, CStr},
-    sync::{Arc, RwLock, Once},
-    collections::HashMap,
-    mem::MaybeUninit,
     fmt::{Display, Formatter, Result as FmtResult},
+    ops::{Deref, DerefMut},
 };
 
 /**
@@ -54,26 +52,6 @@ impl LogLevel {
             _ => return None,
         })
     }
-
-    /**
-     * Set logging function for a given level
-     */
-    pub fn set_function<F>(&self, func: F)
-    where
-        F: FnMut(LogLevel, &str) + 'static,
-    {
-        let func = Box::new(func);
-
-        unsafe {
-            ffi::aubio_log_set_level_function(
-                (*self) as ffi::sint_t,
-                Some(handler::<F>),
-                func.as_ref() as *const _ as *mut _,
-            );
-        }
-
-        log_functions().store(Some(*self), func);
-    }
 }
 
 impl AsRef<str> for LogLevel {
@@ -95,87 +73,87 @@ impl Display for LogLevel {
     }
 }
 
-unsafe extern "C" fn handler<F>(
+/**
+ * Log output handler
+ */
+pub trait Logger {
+    fn log(&mut self, level: LogLevel, message: &str);
+}
+
+/**
+ * Closure logger wrapper
+ */
+pub struct FnLogger<F>(F);
+
+impl<F: FnMut(LogLevel, &str)> Logger for FnLogger<F> {
+    fn log(&mut self, level: LogLevel, message: &str) {
+        (self.0)(level, message);
+    }
+}
+
+/**
+ * Logging
+ *
+ * You can use own logger to handle library messages.
+ * Only one logger supported at a time.
+ * You should keep logger from dropping while it used.
+ */
+pub struct Log<T>(Box<T>);
+
+impl<T> Drop for Log<T> {
+    fn drop(&mut self) {
+        unsafe { ffi::aubio_log_reset(); }
+    }
+}
+
+impl<T> Deref for Log<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> DerefMut for Log<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T: Logger> From<T> for Log<T> {
+    fn from(logger: T) -> Self {
+        let logger = Box::new(logger);
+
+        unsafe {
+            ffi::aubio_log_set_function(
+                Some(handler::<T>),
+                logger.as_ref() as *const _ as *mut _,
+            );
+        }
+
+        Log(logger)
+    }
+}
+
+impl<F: FnMut(LogLevel, &str)> Log<FnLogger<F>> {
+    pub fn from_fn(function: F) -> Self {
+        Log::from(FnLogger(function))
+    }
+}
+
+unsafe extern "C" fn handler<T>(
         level: ffi::sint_t,
         message: *const ffi::char_t,
         data: *mut c_void,
 )
 where
-    F: FnMut(LogLevel, &str)
+    T: Logger,
 {
     assert!(!data.is_null());
 
-    let func = data as *mut F;
+    let logger = &mut *(data as *mut T);
     let level = LogLevel::from_ffi(level).unwrap();
     let message = CStr::from_ptr(message).to_str().unwrap();
 
-    (*func)(level, message);
-}
-
-/**
- * Logging
- */
-pub struct Log(());
-
-impl Log {
-    /**
-     * Reset all logging functions to the default one
-     */
-    pub fn reset() {
-        unsafe { ffi::aubio_log_reset(); }
-
-        log_functions().clear();
-    }
-
-    /**
-     * Set logging function for all levels
-     */
-    pub fn set_function<F>(func: F)
-    where
-        F: FnMut(LogLevel, &str) + 'static,
-    {
-        let func = Box::new(func);
-
-        unsafe {
-            ffi::aubio_log_set_function(
-                Some(handler::<F>),
-                func.as_ref() as *const _ as *mut _,
-            );
-        }
-
-        log_functions().store(None, func);
-    }
-}
-
-#[derive(Clone)]
-struct LogFunctions {
-    map: Arc<RwLock<HashMap<Option<LogLevel>, Box<dyn FnMut(LogLevel, &str)>>>>,
-}
-
-impl LogFunctions {
-    fn new() -> Self {
-        Self { map: Arc::new(RwLock::new(HashMap::new())) }
-    }
-
-    fn store(&self, level: Option<LogLevel>, func: Box<dyn FnMut(LogLevel, &str)>) {
-        let mut map = self.map.write().unwrap();
-        map.insert(level, func);
-    }
-
-    fn clear(&self) {
-        let mut map = self.map.write().unwrap();
-        map.clear();
-    }
-}
-
-fn log_functions() -> LogFunctions {
-    static ONCE: Once = Once::new();
-    static mut FUNCS: MaybeUninit<LogFunctions> = MaybeUninit::uninit();
-
-    unsafe {
-        ONCE.call_once(|| {
-            FUNCS = MaybeUninit::new(LogFunctions::new());
-        });
-        (*FUNCS.as_ptr()).clone()
-    }
+    logger.log(level, message);
 }
