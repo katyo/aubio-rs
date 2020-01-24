@@ -16,22 +16,25 @@ use crate::{
 /**
  * Recognized note data
  */
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Note {
-    pub note: f32,
+    pub pitch: f32,
     pub velocity: f32,
-    pub turnoff: f32,
 }
 
 impl Note {
-    fn parse(values: &[f32; 3]) -> Option<Self> {
-        if values[0] == 0.0 {
-            return None;
+    fn parse(values: &[f32; 3]) -> Vec<Self> {
+        let mut notes = Vec::new();
+
+        if values[2] != 0.0 {
+            notes.push(Self { pitch: values[2], velocity: 0.0 });
         }
-        Some(Self {
-            note: values[0],
-            velocity: values[1],
-            turnoff: values[2],
-        })
+
+        if values[0] != 0.0 {
+            notes.push(Self { pitch: values[0], velocity: values[1] });
+        }
+
+        notes
     }
 }
 
@@ -53,15 +56,14 @@ impl Notes {
     /**
      * Create notes detection object
      *
-     * - `method` Notes detection type
      * - `buf_size` Buffer size for phase vocoder
      * - `hop_size` Hop size for phase vocoder
      * - `samplerate` Sampling rate of the input signal
      */
-    pub fn new(method: OnsetMode, buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
+    pub fn new(buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
         let notes = unsafe {
             ffi::new_aubio_notes(
-                method.as_native_cstr(),
+                "default\0".as_ptr() as *const _,
                 buf_size as ffi::uint_t,
                 hop_size as ffi::uint_t,
                 sample_rate as ffi::uint_t,
@@ -134,7 +136,7 @@ impl Notes {
     /**
      * Execute note detection on an input signal frame
      */
-    pub fn do_result<'i, I>(&mut self, input: I) -> Result<Option<Note>>
+    pub fn do_result<'i, I>(&mut self, input: I) -> Result<Vec<Note>>
     where
         I: Into<FVec<'i>>,
     {
