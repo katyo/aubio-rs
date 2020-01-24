@@ -17,6 +17,9 @@ maintenance = { status = "experimental" }
 version = "0.1.0"
 path = "../aubio-sys"
 
+[dev-dependencies.hound]
+version = "^3"
+
 [features]
 compile-library = ["aubio-sys/compile-library"]
 generate-bindings = ["aubio-sys/generate-bindings"]

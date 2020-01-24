@@ -2,9 +2,6 @@ use crate::{
     Result,
     Status,
 
-    AsNativeStr,
-    OnsetMode,
-
     ffi,
     check_init,
     vec::{
