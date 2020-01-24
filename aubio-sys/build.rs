@@ -1,3 +1,6 @@
+#![allow(unused_variables)]
+#![allow(dead_code)]
+
 #[cfg(feature = "compile-library")]
 use git2::build::RepoBuilder;
 
