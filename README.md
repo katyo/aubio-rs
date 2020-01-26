@@ -72,6 +72,5 @@ Pre-generated bindings supported for the following architectures:
 - __mips64__
 - __powerpc__
 - __powerpc64__
-- __sparc__ _(currently blacklisted)_
+- __sparc__
 - __sparc64__
-- __wasm32__

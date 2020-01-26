@@ -23,6 +23,5 @@ include!("bindings_x64.rs");
     not(target_arch = "powerpc64"),
     not(target_arch = "sparc"),
     not(target_arch = "sparc64"),
-    not(target_arch = "wasm32"),
 ))]
 compile_error!("Missing pre-generated bindings for specific target arch. Try to use 'generate-bindings' feature.");
