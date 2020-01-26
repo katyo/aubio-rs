@@ -4,8 +4,8 @@
 #[cfg(feature = "compile-library")]
 use git2::build::RepoBuilder;
 
-#[cfg(feature = "fetch-prebuilt")]
-use fetch_unroll;
+#[cfg(not(feature = "compile-library"))]
+use fetch_unroll::fetch_unroll;
 
 #[cfg(feature = "generate-bindings")]
 use bindgen;
@@ -33,8 +33,14 @@ use self::LinkArg::*;
 fn main() {
     if !env::var("CARGO_FEATURE_RUSTDOC").is_ok() {
         let out_dir = PathBuf::from(
-            env::var("OUT_DIR").expect("OUT_DIR is set by cargo.")
+            env::var("OUT_DIR").expect("The OUT_DIR is set by cargo.")
         );
+
+        let target = env::var("TARGET")
+            .expect("The TARGET is set by cargo.");
+
+        let profile = env::var("PROFILE")
+            .expect("The PROFILE is set by cargo.");
 
         #[cfg(not(feature = "compile-library"))]
         let pkg_name = env::var("AUBIO_PKG").ok()
@@ -56,11 +62,11 @@ fn main() {
 
         // compiling aubio library and binding extensions
         #[cfg(feature = "compile-library")]
-        let link_args = compile_library(&aubio_src);
+        let link_args = compile_library(&aubio_src, &target, &profile);
 
         // select precompiled aubio library for specified target
         #[cfg(not(feature = "compile-library"))]
-        let link_args = select_library(&pkg_name, &out_dir);
+        let link_args = select_library(&pkg_name, &out_dir, &target, &profile);
 
         for link_arg in link_args {
             match link_arg {
@@ -234,7 +240,7 @@ fn guess_libdir_and_lib_using_pkgconfig<S: AsRef<str>>(pkg_name: S) -> (Option<P
 }
 
 #[cfg(not(feature = "compile-library"))]
-fn select_library<S: AsRef<str>>(pkg_name: S, out_dir: &Path) -> Vec<LinkArg> {
+fn select_library<S: AsRef<str>>(pkg_name: S, out_dir: &Path, target: &str, profile: &str) -> Vec<LinkArg> {
     let lib_name = "aubio";
 
     let (libdir_from_env, lib_from_env) = guess_libdir_and_lib_from_env();
@@ -245,27 +251,29 @@ fn select_library<S: AsRef<str>>(pkg_name: S, out_dir: &Path) -> Vec<LinkArg> {
     } else if let Some(lib_dir) = libdir_from_pkg {
         (lib_dir, lib_from_pkg.or_else(|| lib_from_env).unwrap_or_else(|| lib_name.into()))
     } else {
-        #[cfg(feature = "fetch-prebuilt")]
-        {
-            let target_arch = env::var("CARGO_CFG_TARGET_ARCH")
-                .expect("CARGO_CFG_TARGET_ARCH is set by cargo.");
+        let lib_ver = "0.5.0-alpha";
+        let lib_dir = out_dir.join("aubio-lib");
 
-            let profile = env::var("PROFILE")
-                .expect("PROFILE is set by cargo.");
+        // TODO: check contents
+        if !metadata(&lib_dir).map(|meta| meta.is_dir()).unwrap_or(false) {
+            let lib_url = format!(
+                "{repo}/releases/download/{pkg}-{ver}/{pkg}_{target}_{profile}.tar.gz",
+                repo = env::var("CARGO_PKG_REPOSITORY")
+                    .expect("The CARGO_PKG_REPOSITORY is set by cargo."),
+                pkg = "libaubio",
+                ver = lib_ver,
+                target = &target,
+                profile = &profile,
+            );
 
-            let lib_arch = rustc_target(&target_arch);
-
-            let lib_dir = out_dir.join(lib_arch);
-
-            // TODO: fetch prebuilt
-
-            (lib_dir, lib_name.into())
+            fetch_unroll(&lib_url, &lib_dir, fetch_unroll::Config::default())
+                .map_err(|error| {
+                    format!("Unable to fetch prebuilt library from: \"{}\" due to: {}. Try to enable 'compile-library' feature to build it or set 'AUBIO_LIBDIR' environment variable to use existing one.", lib_url, error)
+                })
+                .unwrap();
         }
 
-        #[cfg(not(feature = "download-prebuilt"))]
-        {
-            panic!("Warning: Unable to search prebuilt library for '{}'. You can set valid AUBIO_LIBDIR environment variable or enable 'download-prebuilt' feature.", pkg_name.as_ref());
-        }
+        (lib_dir, lib_name.into())
     };
 
     vec![
@@ -275,7 +283,7 @@ fn select_library<S: AsRef<str>>(pkg_name: S, out_dir: &Path) -> Vec<LinkArg> {
 }
 
 #[cfg(feature = "compile-library")]
-fn compile_library(lib_src: &Path) -> Vec<LinkArg> {
+fn compile_library(lib_src: &Path, target: &str, profile: &str) -> Vec<LinkArg> {
     let lib_name = String::from("aubio");
 
     /*
@@ -343,8 +351,9 @@ WAF Options:
 
     let mut wafopts = String::new();
 
-    wafopts.push_str(" --build-type=");
-    wafopts.push_str(&env::var("PROFILE").expect("PROFILE env var is set by cargo."));
+    if profile == "debug" {
+        wafopts.push_str(" --debug");
+    }
 
     let flags = [
         ("docs", false),
@@ -368,7 +377,33 @@ WAF Options:
         wafopts.push_str(flag);
     }
 
-    match Command::new("make").current_dir(lib_src).env("WAFOPTS", wafopts).output() {
+    let mut toolchain_env = Vec::new();
+
+    // For cargo: like "CARGO_TARGET_I686_LINUX_ANDROID_CC".  This is really weakly
+    // documented; see https://github.com/rust-lang/cargo/issues/5690 and follow
+    // links from there.
+
+    // For build.rs in `cc` consumers: like "CC_i686-linux-android". See
+    // https://github.com/alexcrichton/cc-rs#external-configuration-via-environment-variables.
+
+    if let Ok(cc) = env::var(format!("CARGO_TARGET_{}_CC", target))
+        .or_else(|_| env::var(format!("CC_{}", target))) {
+            toolchain_env.push(("CC", cc));
+        }
+    if let Ok(ar) = env::var(format!("CARGO_TARGET_{}_AR", target))
+        .or_else(|_| env::var(format!("AR_{}", target))) {
+            toolchain_env.push(("AR", ar));
+        }
+    if let Ok(ld) = env::var(format!("CARGO_TARGET_{}_LINKER", target)) {
+        toolchain_env.push(("LINKER", ld));
+    }
+
+    match Command::new("make")
+        .current_dir(lib_src)
+        .env("WAFOPTS", wafopts)
+        .envs(toolchain_env)
+        .output()
+    {
         Err(error) => {
             panic!("Error: Unable to execute `make` to build '{}' library due to: {}", lib_name, error);
         },

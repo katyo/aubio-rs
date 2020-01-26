@@ -23,7 +23,6 @@ version = "^3"
 [features]
 compile-library = ["aubio-sys/compile-library"]
 generate-bindings = ["aubio-sys/generate-bindings"]
-fetch-prebuilt = ["aubio-sys/fetch-prebuilt"]
 dynamic-link = ["aubio-sys/dynamic-link"]
 rustdoc = ["aubio-sys/rustdoc"]
 check-size = []
