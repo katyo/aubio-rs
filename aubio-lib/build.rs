@@ -192,6 +192,9 @@ mod utils {
 
         let lib_name = String::from("aubio");
 
+        let target = env::var("TARGET")
+            .expect("The TARGET is set by cargo.");
+
         if !lib_dir.join(lib_file(&lib_name, cfg!(feature = "shared"))).is_file() {
             let profile = env::var("PROFILE")
                 .expect("The PROFILE is set by cargo.");
@@ -258,6 +261,11 @@ mod utils {
 
         #[cfg(not(feature = "shared"))]
         println!("cargo:rustc-link-lib=static={}", lib_name);
+
+        if target.contains("-apple") {
+            println!("cargo:rustc-link-lib=framework=Accelerate");
+            println!("cargo:rustc-link-lib=framework=CoreFoundation");
+        }
     }
 
     #[cfg(feature = "with-fftw3")]
