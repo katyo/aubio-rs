@@ -303,68 +303,39 @@ mod utils {
         }
 
         pub fn compile_library(src_dir: &Path, out_dir: &Path) {
-            use std::process::Command;
+            use cmake::Config;
 
             let lib_dir = out_dir.join("lib");
 
             let lib_name = String::from(if cfg!(feature = "with-double") { "fftw3" } else { "fftw3f" });
 
             if !lib_dir.join(lib_file(&lib_name, cfg!(feature = "shared"))).is_file() {
+                use std::fs::{create_dir_all, rename};
 
-                let profile = env::var("PROFILE")
-                    .expect("The PROFILE is set by cargo.");
+                create_dir_all(out_dir).unwrap();
 
-                let num_jobs = env::var("NUM_JOBS")
-                    .expect("The NUM_JOBS is set by cargo.");
+                let library = Config::new(src_dir)
+                    .define("BUILD_SHARED_LIBS", if cfg!(feature = "shared-fftw3") { "ON" } else { "OFF" })
+                    .define("BUILD_TESTS", "OFF")
+                    .define("ENABLE_FLOAT", if cfg!(feature = "with-double") { "OFF" } else { "ON" })
+                    .define("DISABLE_FORTRAN", "ON")
+                    .define("CMAKE_INSTALL_LIBDIR", "lib")
+                    .define("CMAKE_C_COMPILER_WORKS", "1")
+                    .define("CMAKE_CXX_COMPILER_WORKS", "1")
+                    .always_configure(true)
+                    .very_verbose(true)
+                    .out_dir(out_dir)
+                    .build();
 
-                let mut configure_args = Vec::new();
+                { // fix misnamed pkg configs
+                    let pc_dir = out_dir.join("lib").join("pkgconfig");
 
-                configure_args.push("--with-pic");
+                    #[cfg(not(feature = "with-double"))]
+                    let _ = rename(pc_dir.join("fftwf.pc"), pc_dir.join("fftw3f.pc"));
 
-                if cfg!(not(feature = "with-double")) {
-                    configure_args.push("--enable-single");
+                    #[cfg(feature = "with-double")]
+                    let _ = rename(pc_dir.join("fftw.pc"), pc_dir.join("fftw3.pc"));
                 }
-
-                if cfg!(not(feature = "shared-fftw3")) {
-                    configure_args.push("--enable-static");
-                }
-
-                if cfg!(feature = "shared-fftw3") {
-                    configure_args.push("--enable-shared");
-                }
-
-                let mut env_vars = toolchain_env();
-
-                if profile == "debug" {
-                    env_vars.push(("CFLAGS", "-O0 -g3".into()));
-                }
-
-                if profile == "release" {
-                    env_vars.push(("CFLAGS", "-O3".into()));
-                }
-
-                run_command(Command::new("./configure")
-                            .current_dir(&src_dir)
-                            .envs(env_vars.clone())
-                            .arg(format!("--prefix={}", out_dir.display()))
-                            .args(configure_args));
-
-                run_command(Command::new("make")
-                            .current_dir(&src_dir)
-                            .envs(env_vars)
-                            .arg(format!("-j{}", num_jobs))
-                            .arg("install"));
-            }
-
-            #[cfg(not(feature = "nolink-fftw3"))]
-            {
-                println!("cargo:rustc-link-search=native={}", lib_dir.display());
-
-                #[cfg(feature = "shared-fftw3")]
-                println!("cargo:rustc-link-lib={}", lib_name);
-
-                #[cfg(not(feature = "shared-fftw3"))]
-                println!("cargo:rustc-link-lib=static={}", lib_name);
             }
         }
     }
