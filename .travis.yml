@@ -9,35 +9,17 @@ os:
 - windows
 cache: cargo
 script:
-- |
-  cd aubio-sys
-  cargo test --release
-  cd -
-- |
-  cd aubio-lib
-  cargo test --release
-  cargo test --release --features with-fftw3
-  cd -
-- |
-  cd aubio-rs
-  cargo test --release --features log
-  cd -
+- (cd aubio-sys && cargo test --release)
+- (cd aubio-lib && cargo test --release)
+- (cd aubio-lib && cargo test --release --features with-fftw3)
+- (cd aubio-rs && cargo test --release --features log)
 jobs:
   allow_failures:
   - rust: nightly
   include:
   - stage: publish
     script:
-    - |
-      cd aubio-sys
-      cargo publish || true
-      cd -
-    - |
-      cd aubio-lib
-      cargo publish || true
-      cd -
-    - |
-      cd aubio-rs
-      cargo publish || true
-      cd -
+    - (cd aubio-sys && cargo publish || true)
+    - (cd aubio-lib && cargo publish || true)
+    - (cd aubio-rs && cargo publish || true)
     if: (type = push) && (tag =~ /^\d+\.\d+\.\d+/)
