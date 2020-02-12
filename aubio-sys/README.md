@@ -5,6 +5,6 @@
 [![Docs.rs API Docs](https://docs.rs/aubio-sys/badge.svg)](https://docs.rs/aubio-sys)
 [![Travis-CI Status](https://travis-ci.com/katyo/aubio-rs.svg?branch=master)](https://travis-ci.com/katyo/aubio-rs)
 
-This crate provides generated unsafe Rust bindings for [_aubio_](//github.com/aubio/aubio) C library.
+This crate provides generated unsafe Rust bindings to [_aubio_](//github.com/aubio/aubio) C library.
 
-Probably this isn't that you need. See [safe bindings](https://crates.io/crates/aubio-rs).
+Probably this isn't that you really need. See [safe bindings](https://crates.io/crates/aubio-rs).

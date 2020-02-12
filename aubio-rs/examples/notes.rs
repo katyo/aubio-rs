@@ -10,6 +10,7 @@
 
 use std::io::stdin;
 use hound::WavReader;
+use aubio_lib as _;
 use aubio_rs::Notes;
 
 const BUF_SIZE: usize = 512;

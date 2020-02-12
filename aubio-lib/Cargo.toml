@@ -1,7 +1,7 @@
 [package]
-name = "aubio-sys"
+name = "aubio-lib"
 version = "0.1.2"
-description = "Unsafe bindings for aubio library to label music and sounds."
+description = "Bundled aubio C library."
 categories = ["external-ffi-bindings", "multimedia::audio"]
 keywords = ["aubio", "audio", "processing", "recognition", "ffi"]
 authors = ["K. <kayo@illumium.org>"]
@@ -15,15 +15,18 @@ edition = "2018"
 
 [build-dependencies.fetch_unroll]
 version = "^0.2"
-optional = true
-
-[build-dependencies.bindgen]
-version = "^0.52"
-optional = true
 
 [features]
-generate-bindings = ["bindgen", "fetch_unroll"]
+shared = []
 rustdoc = []
+
+with-fftw3f = []
+with-fftw3 = []
+with-wav = []
+with-jack = []
+with-sndfile = []
+with-avcodec = []
+with-samplerate = []
 
 [package.metadata.docs.rs]
 features = ["rustdoc"]

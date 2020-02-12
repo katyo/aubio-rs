@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "aubio-sys",
+  "aubio-lib",
   "aubio-rs",
 ]
 

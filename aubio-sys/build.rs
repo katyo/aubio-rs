@@ -1,495 +1,80 @@
-#![allow(unused_variables)]
-#![allow(dead_code)]
-
-#[cfg(feature = "compile-library")]
-use git2::build::RepoBuilder;
-
-#[cfg(not(feature = "compile-library"))]
-use fetch_unroll::fetch_unroll;
-
 #[cfg(feature = "generate-bindings")]
-use bindgen;
-
-use std::process::{
-    Command,
-    Output,
-};
-
-use std::{
-    env,
-    path::{Path, PathBuf},
-    fs::metadata,
-    str::from_utf8,
-};
-
-enum LinkArg {
-    SearchPath(String),
-    StaticLib(String),
-    SharedLib(String),
+mod source {
+    //pub const REPOSITORY: &str = "https://github.com/aubio/aubio";
+    //pub const VERSION: &str = "0.4.9";
+    pub const REPOSITORY: &str = "https://github.com/katyo/aubio";
+    pub const VERSION: &str = "master";
 }
-
-use self::LinkArg::*;
 
 fn main() {
-    if !env::var("CARGO_FEATURE_RUSTDOC").is_ok() {
-        let out_dir = PathBuf::from(
-            env::var("OUT_DIR").expect("The OUT_DIR is set by cargo.")
-        );
-
-        let target = env::var("TARGET")
-            .expect("The TARGET is set by cargo.");
-
-        let profile = env::var("PROFILE")
-            .expect("The PROFILE is set by cargo.");
-
-        #[cfg(not(feature = "compile-library"))]
-        let pkg_name = env::var("AUBIO_PKG").ok()
-            .unwrap_or_else(|| "aubio".into());
-
-        #[cfg(feature = "compile-library")]
-        let aubio_src = {
-            let aubio_src = out_dir.join("aubio-src");
-
-            // TODO: check contents
-            if !metadata(aubio_src.join(".git"))
-                .map(|meta| meta.is_dir())
-                .unwrap_or(false) {
-                    fetch_aubio(&aubio_src);
-                }
-
-            aubio_src
+    #[cfg(feature = "generate-bindings")]
+    {
+        use std::{
+            env,
+            path::Path,
         };
 
-        // compiling aubio library and binding extensions
-        #[cfg(feature = "compile-library")]
-        let link_args = compile_library(&aubio_src, &target, &profile);
-
-        // select precompiled aubio library for specified target
-        #[cfg(not(feature = "compile-library"))]
-        let link_args = select_library(&pkg_name, &out_dir, &target, &profile);
-
-        for link_arg in link_args {
-            match link_arg {
-                SearchPath(path) => println!("cargo:rustc-link-search=native={}", path),
-                StaticLib(name) => println!("cargo:rustc-link-lib=static={}", name),
-                SharedLib(name) => println!("cargo:rustc-link-lib={}", name),
-            }
-        }
-
-        #[cfg(feature = "generate-bindings")]
-        {
-            #[cfg(feature = "compile-library")]
-            let aubio_includedir = {
-                aubio_src.join("src")
-            };
-
-            #[cfg(not(feature = "compile-library"))]
-            let aubio_includedir = {
-                guess_includedir_from_env()
-                    .or_else(|| guess_includedir_using_pkgconfig(&pkg_name))
-                    .expect("Unable to determine aubio include directory. You can set it manually using AUBIO_INCLUDEDIR environment variable.")
-            };
-
-            let out_file = out_dir.join("bindings.rs");
-            generate_bindings(&aubio_includedir, &out_file);
-        }
-    }
-}
-
-#[cfg(not(feature = "compile-library"))]
-fn guess_includedir_from_env() -> Option<PathBuf> {
-    env::var("AUBIO_INCLUDEDIR").ok().and_then(|dir| {
-        let include_dir = Path::new(&dir);
-
-        for &include_dir in &[include_dir, &include_dir.join("aubio")] {
-            if metadata(include_dir.join("aubio.h"))
-                .map(|meta| meta.is_file()).unwrap_or(false) {
-                    return Some(include_dir.to_owned());
-                }
-        }
-
-        None
-    })
-}
-
-#[cfg(not(feature = "compile-library"))]
-fn lib_ext() -> &'static str {
-    #[cfg(not(feature = "dynamic-link"))]
-    {
-        #[cfg(target_os = "windows")]
-        { ".lib" }
-
-        #[cfg(not(target_os = "windows"))]
-        { ".a" }
-    }
-
-    #[cfg(feature = "dynamic-link")]
-    {
-        #[cfg(target_os = "windows")]
-        { ".dll" }
-
-        #[cfg(not(target_os = "windows"))]
-        { ".so" }
-    }
-}
-
-#[cfg(not(feature = "compile-library"))]
-fn guess_libdir_and_lib_from_env() -> (Option<PathBuf>, Option<String>) {
-    let lib_name_from_env = env::var("AUBIO_LIB").ok();
-
-    let lib_name = lib_name_from_env.as_ref()
-        .map(|lib_name| lib_name.to_owned())
-        .unwrap_or_else(|| "aubio".into());
-
-    // Determining library directory
-    let lib_dir_from_env = env::var("AUBIO_LIBDIR")
-        .ok().and_then(|lib_dir| {
-            let lib_dir = Path::new(&lib_dir);
-            let lib_path = lib_dir.join(format!("lib{}{}", lib_name, lib_ext()));
-
-            if metadata(&lib_path).map(|meta| meta.is_file()).unwrap_or(false) {
-                Some(lib_dir.to_owned())
-            } else {
-                eprintln!("Warning: library '{}' not found", lib_path.display());
-                None
-            }
-        });
-
-    (lib_dir_from_env, lib_name_from_env)
-}
-
-#[cfg(not(feature = "compile-library"))]
-fn guess_includedir_using_pkgconfig<S: AsRef<str>>(pkg_name: S) -> Option<PathBuf> {
-    let pkg_name = pkg_name.as_ref();
-    match Command::new("pkg-config").arg("--cflags").arg(&pkg_name).output() {
-        Err(error) => {
-            eprintln!("Warning: Unable to execute `pkg-config --cflags {}` due to: {}", pkg_name, error);
-        },
-        Ok(Output { status, stdout, stderr }) => {
-            if !status.success() {
-                eprintln!("Warning: Unable to guess cflags for '{}'.", pkg_name);
-                eprintln!("pkg-config stderr:");
-                eprintln!("{}", from_utf8(stderr.as_slice())
-                          .unwrap_or("<invalid UTF8 string>"));
-            } else {
-                if let Ok(stdout) = from_utf8(stdout.as_slice()) {
-                    let mut include_dir = None;
-                    'top: for arg in stdout.split_whitespace() {
-                        if arg.starts_with("-I") {
-                            let dir = Path::new(&arg[2..]);
-                            let candidates = &[dir, &dir.join(pkg_name)];
-
-                            for &dir in candidates {
-                                if metadata(dir.join("aubio.h"))
-                                    .map(|meta| meta.is_file()).unwrap_or(false) {
-                                        include_dir = dir.to_owned().into();
-                                        break 'top;
-                                    }
-                            }
-                            eprintln!("Warning: Unable to guess include dir for '{}' from candidates:", pkg_name);
-                            for dir in candidates {
-                                eprintln!("{}", dir.display());
-                            }
-                        }
-                    }
-                    return include_dir;
-                } else {
-                    eprintln!("Warning: Unable to guess include dir for '{}'.", pkg_name);
-                    eprintln!("pkg-config stdout: <invalid UTF8 string>");
-                }
-            }
-        },
-    }
-    None
-}
-
-#[cfg(not(feature = "compile-library"))]
-fn guess_libdir_and_lib_using_pkgconfig<S: AsRef<str>>(pkg_name: S) -> (Option<PathBuf>, Option<String>) {
-    let pkg_name = pkg_name.as_ref();
-    match Command::new("pkg-config").arg("--libs").arg(&pkg_name).output() {
-        Err(error) => {
-            eprintln!("Warning: Unable to execute `pkg-config --libs {}` due to: {}", pkg_name, error);
-        },
-        Ok(Output { status, stdout, stderr }) => {
-            if !status.success() {
-                eprintln!("Warning: Unable to guess libs for '{}'.", pkg_name);
-                eprintln!("pkg-config stderr:");
-                eprintln!("{}", from_utf8(stderr.as_slice())
-                          .unwrap_or("<invalid UTF8 string>"));
-            } else {
-                if let Ok(stdout) = from_utf8(stdout.as_slice()) {
-                    let mut lib_dir = None;
-                    let mut lib_name = None;
-                    for arg in stdout.split_whitespace() {
-                        if arg.starts_with("-L") {
-                            lib_dir = Path::new(&arg[2..]).to_owned().into();
-                        }
-                        if arg.starts_with("-l") {
-                            lib_name = arg[2..].to_owned().into();
-                        }
-                    }
-                    return (lib_dir, lib_name);
-                } else {
-                    eprintln!("Warning: Unable to guess libs for '{}'.", pkg_name);
-                    eprintln!("pkg-config stdout: <invalid UTF8 string>");
-                }
-            }
-        },
-    }
-    (None, None)
-}
-
-#[cfg(not(feature = "compile-library"))]
-fn select_library<S: AsRef<str>>(pkg_name: S, out_dir: &Path, target: &str, profile: &str) -> Vec<LinkArg> {
-    let lib_name = "aubio";
-
-    let (libdir_from_env, lib_from_env) = guess_libdir_and_lib_from_env();
-    let (libdir_from_pkg, lib_from_pkg) = guess_libdir_and_lib_using_pkgconfig(&pkg_name);
-
-    let (lib_dir, lib_name) = if let Some(lib_dir) = libdir_from_env {
-        (lib_dir, lib_from_env.unwrap_or_else(|| lib_name.into()))
-    } else if let Some(lib_dir) = libdir_from_pkg {
-        (lib_dir, lib_from_pkg.or_else(|| lib_from_env).unwrap_or_else(|| lib_name.into()))
-    } else {
-        let lib_ver = "0.5.0-alpha";
-        let lib_dir = out_dir.join("aubio-lib");
-
-        // TODO: check contents
-        if !metadata(&lib_dir).map(|meta| meta.is_dir()).unwrap_or(false) {
-            let lib_url = format!(
-                "{repo}/releases/download/{pkg}-{ver}/{pkg}_{target}_{profile}.tar.gz",
-                repo = env::var("CARGO_PKG_REPOSITORY")
-                    .expect("The CARGO_PKG_REPOSITORY is set by cargo."),
-                pkg = "libaubio",
-                ver = lib_ver,
-                target = &target,
-                profile = &profile,
-            );
-
-            fetch_unroll(&lib_url, &lib_dir, fetch_unroll::Config::default())
-                .map_err(|error| {
-                    format!("Unable to fetch prebuilt library from: \"{}\" due to: {}. Try to enable 'compile-library' feature to build it or set 'AUBIO_LIBDIR' environment variable to use existing one.", lib_url, error)
-                })
-                .unwrap();
-        }
-
-        (lib_dir, lib_name.into())
-    };
-
-    vec![
-        SearchPath(lib_dir.display().to_string()),
-        if cfg!(feature = "dynamic-link") { SharedLib(lib_name) } else { StaticLib(lib_name) },
-    ]
-}
-
-#[cfg(feature = "compile-library")]
-fn compile_library(lib_src: &Path, target: &str, profile: &str) -> Vec<LinkArg> {
-    let lib_name = String::from("aubio");
-
-    /*
-WAF Options:
-  --build-type=BUILD_TYPE
-                        whether to compile with (--build-type=release) or without (--build-type=debug) compiler opimizations
-                        [default: release]
-  --debug               build in debug mode (see --build-type)
-  --enable-fftw3f       compile with fftw3f instead of ooura (recommended)
-  --disable-fftw3f      do not compile with fftw3f
-  --enable-fftw3        compile with fftw3 instead of ooura
-  --disable-fftw3       do not compile with fftw3
-  --enable-intelipp     use Intel IPP libraries (auto)
-  --disable-intelipp    do not use Intel IPP libraries
-  --enable-complex      compile with C99 complex
-  --disable-complex     do not use C99 complex (default)
-  --enable-jack         compile with jack (auto)
-  --disable-jack        disable jack support
-  --enable-sndfile      compile with sndfile (auto)
-  --disable-sndfile     disable sndfile
-  --enable-avcodec      compile with libavcodec (auto)
-  --disable-avcodec     disable libavcodec
-  --enable-samplerate   compile with samplerate (auto)
-  --disable-samplerate  disable samplerate
-  --enable-memcpy       use memcpy hacks (default)
-  --disable-memcpy      do not use memcpy hacks
-  --enable-double       compile in double precision mode
-  --disable-double      compile in single precision mode (default)
-  --enable-fat          build fat binaries (darwin only)
-  --disable-fat         do not build fat binaries (default)
-  --enable-accelerate   use Accelerate framework (darwin only) (auto)
-  --disable-accelerate  do not use Accelerate framework
-  --enable-apple-audio  use CoreFoundation (darwin only) (auto)
-  --disable-apple-audio
-                        do not use CoreFoundation framework
-  --enable-blas         use BLAS acceleration library (no)
-  --disable-blas        do not use BLAS library
-  --enable-atlas        use ATLAS acceleration library (no)
-  --disable-atlas       do not use ATLAS library
-  --enable-wavread      compile with source_wavread (default)
-  --disable-wavread     do not compile source_wavread
-  --enable-wavwrite     compile with source_wavwrite (default)
-  --disable-wavwrite    do not compile source_wavwrite
-  --enable-docs         build documentation (auto)
-  --disable-docs        do not build documentation
-  --enable-tests        build tests (true)
-  --disable-tests       do not build or run tests
-  --enable-examples     build examples (true)
-  --disable-examples    do not build examples
-  --with-target-platform=TARGET_PLATFORM
-                        set target platform for cross-compilation
-  --notests             Exec no unit tests
-  --alltests            Exec all unit tests
-  --clear-failed        Force failed unit tests to run again next time
-  --testcmd=TESTCMD     Run the unit tests using the test-cmd string example "--testcmd="valgrind --error-exitcode=1 %s" to run
-                        under valgrind
-  --dump-test-scripts   Create python scripts to help debug tests
-
-  Configuration options:
-    -o OUT, --out=OUT   build dir for the project
-    -t TOP, --top=TOP   src dir for the project
-    --check-c-compiler=CHECK_C_COMPILER
-                        list of C compilers to try [gcc clang icc]
-     */
-
-    let mut wafopts = String::new();
-
-    if profile == "debug" {
-        wafopts.push_str(" --debug");
-    }
-
-    let flags = [
-        ("docs", false),
-        ("tests", false),
-        ("examples", false),
-
-        ("fftw3f", cfg!(feature = "with-fftw3f")),
-        ("fftw3", cfg!(feature = "with-fftw3")),
-
-        ("wavread", cfg!(feature = "with-wav")),
-        ("wavwrite", cfg!(feature = "with-wav")),
-
-        ("jack", cfg!(feature = "with-jack")),
-        ("sndfile", cfg!(feature = "with-sndfile")),
-        ("avcodec", cfg!(feature = "with-avcodec")),
-        ("samplerate", cfg!(feature = "with-samplerate")),
-    ];
-
-    for &(flag, state) in &flags {
-        wafopts.push_str(if state { " --enable-" } else { " --disable-" });
-        wafopts.push_str(flag);
-    }
-
-    let mut toolchain_env = Vec::new();
-
-    // For cargo: like "CARGO_TARGET_I686_LINUX_ANDROID_CC".  This is really weakly
-    // documented; see https://github.com/rust-lang/cargo/issues/5690 and follow
-    // links from there.
-
-    // For build.rs in `cc` consumers: like "CC_i686-linux-android". See
-    // https://github.com/alexcrichton/cc-rs#external-configuration-via-environment-variables.
-
-    if let Ok(cc) = env::var(format!("CARGO_TARGET_{}_CC", target))
-        .or_else(|_| env::var(format!("CC_{}", target))) {
-            toolchain_env.push(("CC", cc));
-        }
-    if let Ok(ar) = env::var(format!("CARGO_TARGET_{}_AR", target))
-        .or_else(|_| env::var(format!("AR_{}", target))) {
-            toolchain_env.push(("AR", ar));
-        }
-    if let Ok(ld) = env::var(format!("CARGO_TARGET_{}_LINKER", target)) {
-        toolchain_env.push(("LINKER", ld));
-    }
-
-    match Command::new("make")
-        .current_dir(lib_src)
-        .env("WAFOPTS", wafopts)
-        .envs(toolchain_env)
-        .output()
-    {
-        Err(error) => {
-            panic!("Error: Unable to execute `make` to build '{}' library due to: {}", lib_name, error);
-        },
-        Ok(Output { status, stderr, .. }) => {
-            if !status.success() {
-                panic!("Error: Compilation errors when building '{}' library: {}", lib_name,
-                       from_utf8(stderr.as_slice()).unwrap_or("<invalud UTF8 string>"));
-            }
-        }
-    }
-
-    vec![
-        SearchPath(format!("{}/build/src", lib_src.display())),
-        if cfg!(feature = "static-link") { StaticLib(lib_name) } else { SharedLib(lib_name) },
-    ]
-}
-
-#[cfg(any(/*feature = "generate-bindings", */feature = "compile-library"))]
-fn fetch_aubio(out_dir: &Path) { // clonning aubio git repo
-    //let repo = "https://github.com/aubio/aubio";
-    //let version = "master";
-    let repo = "https://github.com/katyo/aubio";
-    let version = "fix-shebang";
-
-    let url = env::var("AUBIO_GIT_URL")
-        .unwrap_or_else(|_| repo.into());
-    let tag = env::var("AUBIO_GIT_TAG")
-        .unwrap_or_else(|_| version.into());
-
-    let _repo = match RepoBuilder::new()
-        .branch(&tag)
-        .clone(&url, out_dir) {
-            Ok(repo) => repo,
-            Err(error) => panic!("Unable to fetch 'aubio' library from git due to {}. url={} tag={}", error, url, tag),
+        let src = utils::Source {
+            repository: env::var("AUBIO_REPOSITORY")
+                .unwrap_or(source::REPOSITORY.into()),
+            version: env::var("AUBIO_VERSION")
+                .unwrap_or(source::VERSION.into()),
         };
-}
 
-#[cfg(not(feature = "compile-library"))]
-fn rustc_target<S: AsRef<str>>(target_arch: &S) -> &'static str {
-    match target_arch.as_ref() {
-        "arm" => "armv7",
-        "aarch64" => "aarch64",
-        "x86" => "i686",
-        "x86_64" => "x86_64",
-        arch => panic!("Unsupported architecture {}", arch),
+        let out_dir = env::var("OUT_DIR")
+            .expect("The OUT_DIR is set by cargo.");
+
+        let out_dir = Path::new(&out_dir);
+
+        let src_dir = out_dir.join("source")
+            .join(&src.version);
+
+        utils::fetch_source(&src, &src_dir);
+
+        let inc_dir = src_dir.join("src");
+        let bindings = out_dir.join("bindings.rs");
+
+        utils::generate_bindings(&inc_dir, &bindings);
     }
 }
 
 #[cfg(feature = "generate-bindings")]
-fn android_target<S: AsRef<str>>(target_arch: &S) -> &'static str {
-    match target_arch.as_ref() {
-        "arm" => "arm-linux-androideabi",
-        "aarch64" => "aarch64-linux-android",
-        "x86" => "i686-linux-android",
-        "x86_64" => "x86_64-linux-android",
-        arch => panic!("Unsupported architecture {}", arch),
-    }
-}
+mod utils {
+    use std::path::Path;
 
-#[cfg(feature = "generate-bindings")]
-fn generate_bindings(aubio_includedir: &Path, out_file: &Path) {
-    let target_os = env::var("CARGO_CFG_TARGET_OS")
-        .expect("CARGO_CFG_TARGET_OS is set by cargo.");
-
-    let target_arch = env::var("CARGO_CFG_TARGET_ARCH")
-        .expect("CARGO_CFG_TARGET_ARCH is set by cargo.");
-
-    let mut clang_args = Vec::new();
-
-    if target_os == "android" {
-        let ndk_target = android_target(&target_arch);
-
-        clang_args.push(format!("--target={}", ndk_target));
+    pub struct Source {
+        pub repository: String,
+        pub version: String,
     }
 
-    let bindings = bindgen::Builder::default()
-        .detect_include_paths(true)
-        .clang_args(&clang_args)
-        .clang_args(&[
-            format!("-I{}", aubio_includedir.display()),
-        ])
-        .header(aubio_includedir.join("aubio.h").display().to_string())
-        .generate()
-        .expect("Unable to generate bindings");
+    pub fn fetch_source(src: &Source, out_dir: &Path) {
+        use fetch_unroll::Fetch;
 
-    bindings
-        .write_to_file(out_file)
-        .expect("Couldn't write bindings!");
+        if !out_dir.is_dir() {
+            let src_url = format!("{repo}/archive/{ver}.tar.gz",
+                                  repo = src.repository,
+                                  ver = src.version);
+
+            eprintln!("Fetch aubio sources from {} to {}",
+                      src_url, out_dir.display());
+
+            Fetch::from(src_url).unroll().strip_components(1).to(out_dir)
+                .expect("Aubio sources should be fetched");
+        }
+    }
+
+    pub fn generate_bindings(inc_dir: &Path, out_file: &Path) {
+        let bindings = bindgen::Builder::default()
+            .detect_include_paths(true)
+            .clang_args(&[
+                format!("-I{}", inc_dir.display()),
+            ])
+            .header(inc_dir.join("aubio.h").display().to_string())
+            .generate()
+            .expect("Generated bindings");
+
+        bindings
+            .write_to_file(out_file)
+            .expect("Writen bindings");
+    }
 }

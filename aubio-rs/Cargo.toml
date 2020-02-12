@@ -1,6 +1,6 @@
 [package]
 name = "aubio-rs"
-version = "0.1.0"
+version = "0.1.2"
 description = "Safe bindings for aubio library to label music and sounds."
 categories = ["external-ffi-bindings", "multimedia::audio"]
 keywords = ["aubio", "audio", "processing", "recognition", "ffi"]
@@ -11,29 +11,23 @@ repository = "https://github.com/katyo/aubio-rs"
 edition = "2018"
 
 [badges]
-maintenance = { status = "experimental" }
+
 
 [dependencies.aubio-sys]
-version = "0.1.0"
+version = "0.1.2"
 path = "../aubio-sys"
 
 [dev-dependencies.hound]
 version = "^3"
 
+[dev-dependencies.aubio-lib]
+version = "0.1.2"
+path = "../aubio-lib"
+
 [features]
-compile-library = ["aubio-sys/compile-library"]
 generate-bindings = ["aubio-sys/generate-bindings"]
-dynamic-link = ["aubio-sys/dynamic-link"]
 rustdoc = ["aubio-sys/rustdoc"]
 check-size = []
-
-with-fftw3f = ["aubio-sys/with-fftw3f"]
-with-fftw3 = ["aubio-sys/with-fftw3"]
-with-wav = ["aubio-sys/with-wav"]
-with-jack = ["aubio-sys/with-jack"]
-with-sndfile = ["aubio-sys/with-sndfile"]
-with-avcodec = ["aubio-sys/with-avcodec"]
-with-samplerate = ["aubio-sys/with-samplerate"]
 
 [package.metadata.docs.rs]
 features = ["rustdoc"]
