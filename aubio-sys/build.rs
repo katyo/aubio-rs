@@ -1,9 +1,7 @@
 #[cfg(feature = "generate-bindings")]
 mod source {
-    //pub const REPOSITORY: &str = "https://github.com/aubio/aubio";
-    //pub const VERSION: &str = "0.4.9";
-    pub const REPOSITORY: &str = "https://github.com/katyo/aubio";
-    pub const VERSION: &str = "master";
+    pub const REPOSITORY: &str = "https://aubio.org/pub/aubio-";
+    pub const VERSION: &str = "0.4.9";
 }
 
 fn main() {
@@ -51,7 +49,7 @@ mod utils {
         use fetch_unroll::Fetch;
 
         if !out_dir.is_dir() {
-            let src_url = format!("{repo}/archive/{ver}.tar.gz",
+            let src_url = format!("{repo}{ver}.tar.gz",
                                   repo = src.repository,
                                   ver = src.version);
 

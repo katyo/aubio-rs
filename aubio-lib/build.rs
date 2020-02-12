@@ -1,9 +1,7 @@
 #[cfg(not(feature = "rustdoc"))]
 mod source {
-    //pub const REPOSITORY: &str = "https://github.com/aubio/aubio";
-    //pub const VERSION: &str = "0.4.9";
-    pub const REPOSITORY: &str = "https://github.com/katyo/aubio";
-    pub const VERSION: &str = "master";
+    pub const REPOSITORY: &str = "https://aubio.org/pub/aubio-";
+    pub const VERSION: &str = "0.4.9";
 
     #[cfg(feature = "with-fftw3")]
     pub mod fftw3 {
@@ -96,7 +94,7 @@ mod utils {
         use fetch_unroll::Fetch;
 
         if !out_dir.is_dir() {
-            let src_url = format!("{repo}/archive/{ver}.tar.gz",
+            let src_url = format!("{repo}{ver}.tar.gz",
                                   repo = src.repository,
                                   ver = src.version);
 
@@ -199,8 +197,8 @@ mod utils {
             let profile = env::var("PROFILE")
                 .expect("The PROFILE is set by cargo.");
 
-            let num_jobs = env::var("NUM_JOBS")
-                .expect("The NUM_JOBS is set by cargo.");
+            //let num_jobs = env::var("NUM_JOBS")
+            //    .expect("The NUM_JOBS is set by cargo.");
 
             let mut wafopts = String::new();
 
@@ -247,11 +245,22 @@ mod utils {
                 env_vars.push(("PKG_CONFIG_PATH", pkg_config_path.join(":")));
             }
 
-            run_command(Command::new("make")
+            env_vars.push(("WAFOPTS", wafopts));
+
+            let make = env::var("MAKE")
+                .unwrap_or("make".into());
+
+            run_command(Command::new(&make)
+                        .envs(env_vars.clone())
                         .current_dir(src_dir)
-                        .arg(format!("-j{}", num_jobs))
-                        .env("WAFOPTS", wafopts)
-                        .envs(env_vars));
+                        //.arg(format!("-j{}", num_jobs))
+                        .arg("checkwaf"));
+
+            run_command(Command::new(&make)
+                        .envs(env_vars.clone())
+                        .current_dir(src_dir)
+                        //.arg(format!("-j{}", num_jobs))
+                        .arg("build"));
         }
 
         println!("cargo:rustc-link-search=native={}", lib_dir.display());
@@ -270,16 +279,9 @@ mod utils {
 
     #[cfg(feature = "with-fftw3")]
     pub mod fftw3 {
-        use super::{
-            toolchain_env,
-            run_command,
-            lib_file,
-        };
+        use super::lib_file;
 
-        use std::{
-            env,
-            path::Path,
-        };
+        use std::path::Path;
 
         pub struct Source {
             pub location: String,
@@ -314,14 +316,22 @@ mod utils {
 
                 create_dir_all(out_dir).unwrap();
 
-                let library = Config::new(src_dir)
-                    .define("BUILD_SHARED_LIBS", if cfg!(feature = "shared-fftw3") { "ON" } else { "OFF" })
-                    .define("BUILD_TESTS", "OFF")
-                    .define("ENABLE_FLOAT", if cfg!(feature = "with-double") { "OFF" } else { "ON" })
-                    .define("DISABLE_FORTRAN", "ON")
+                fn bool_flag(flag: bool) -> &'static str {
+                    if flag { "ON" } else { "OFF" }
+                }
+
+                let _library = Config::new(src_dir)
+                    .define("BUILD_SHARED_LIBS", bool_flag(cfg!(feature = "shared-fftw3")))
+                    .define("BUILD_TESTS", bool_flag(false))
+                    .define("ENABLE_FLOAT", bool_flag(!cfg!(feature = "with-double")))
+                    .define("DISABLE_FORTRAN", bool_flag(true))
+                    .define("ENABLE_SSE", bool_flag(cfg!(target_feature = "sse")))
+                    .define("ENABLE_SSE2", bool_flag(cfg!(target_feature = "sse2")))
+                    .define("ENABLE_AVX", bool_flag(cfg!(target_feature = "avx")))
+                    .define("ENABLE_AVX2", bool_flag(cfg!(target_feature = "avx2")))
                     .define("CMAKE_INSTALL_LIBDIR", "lib")
-                    .define("CMAKE_C_COMPILER_WORKS", "1")
-                    .define("CMAKE_CXX_COMPILER_WORKS", "1")
+                    .define("CMAKE_C_COMPILER_WORKS", bool_flag(true))
+                    .define("CMAKE_CXX_COMPILER_WORKS", bool_flag(true))
                     .always_configure(true)
                     .very_verbose(true)
                     .out_dir(out_dir)
