@@ -32,12 +32,8 @@ use aubio_lib as _;
 The following features can be used to customize library configuration:
 
 - _shared_ Force bundle shared (or dynamic) library instead of static
-- _with-fftw3f_ Enables floating-point __fftw3__ support
 - _with-fftw3_ Enables __fftw3__ support
-- _with-wav_ Enables _wavread_/_wavwrite_ support
-- _with-jack_ Enables __jack__ support
-- _with-sndfile_ Enables __libsndfile__ support
-- _with-avcodec_ Enables __libavcodec__ support
-- _with-samplerate_ Enables __libsamplerate__ support
+- _nolink-fftw3_ Disable __fftw3__ link
+- _shared-fftw3_ Force shared __fftw3__ link
 
  */

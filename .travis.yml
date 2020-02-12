@@ -16,6 +16,7 @@ script:
 - |
   cd aubio-lib
   cargo test --release
+  cargo test --release --features with-fftw3
   cd -
 - |
   cd aubio-rs

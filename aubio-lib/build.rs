@@ -1,8 +1,15 @@
+#[cfg(not(feature = "rustdoc"))]
 mod source {
     //pub const REPOSITORY: &str = "https://github.com/aubio/aubio";
     //pub const VERSION: &str = "0.4.9";
     pub const REPOSITORY: &str = "https://github.com/katyo/aubio";
     pub const VERSION: &str = "master";
+
+    #[cfg(feature = "with-fftw3")]
+    pub mod fftw3 {
+        pub const LOCATION: &str = "http://www.fftw.org/fftw-";
+        pub const VERSION: &str = "3.3.8";
+    }
 }
 
 fn main() {
@@ -25,22 +32,60 @@ fn main() {
 
         let out_dir = Path::new(&out_dir);
 
+        #[cfg(feature = "with-fftw3")]
+        let fftw3_dir = {
+            let src = utils::fftw3::Source {
+                location: env::var("FFTW3_LOCATION")
+                    .unwrap_or(source::fftw3::LOCATION.into()),
+                version: env::var("FFTW3_VERSION")
+                    .unwrap_or(source::fftw3::VERSION.into()),
+            };
+
+            let src_dir = out_dir.join("fftw3-source")
+                .join(&src.version);
+
+            let bld_dir = out_dir.join("fftw3-build")
+                .join(&src.version);
+
+            utils::fftw3::fetch_source(&src, &src_dir);
+
+            utils::fftw3::compile_library(&src_dir, &bld_dir);
+
+            bld_dir.join("lib").join("pkgconfig").to_owned()
+        };
+
         let src_dir = out_dir.join("source")
             .join(&src.version);
+
+        let bld_dir = out_dir.join("build")
+            .join(&src.version);
+
+        let config = utils::Config {
+            #[cfg(feature = "with-fftw3")]
+            fftw3_dir: Some(fftw3_dir.to_owned()),
+
+            ..utils::Config::default()
+        };
 
         utils::fetch_source(&src, &src_dir);
 
         utils::fix_source(&src_dir);
 
-        utils::compile_library(&src_dir);
+        utils::compile_library(&src_dir, &bld_dir, &config);
     }
 }
 
 mod utils {
     use std::{
         env,
-        path::Path,
+        path::{Path, PathBuf},
+        process::Command,
     };
+
+    #[derive(Default)]
+    pub struct Config {
+        pub fftw3_dir: Option<PathBuf>,
+    }
 
     pub struct Source {
         pub repository: String,
@@ -80,112 +125,11 @@ mod utils {
         }
     }
 
-    pub fn compile_library(src_dir: &Path) {
-        use std::{
-            str::from_utf8,
-            process::{Command, Output},
-        };
-
-        let lib_name = String::from("aubio");
-
+    pub fn toolchain_env() -> Vec<(&'static str, String)> {
         let target = env::var("TARGET")
             .expect("The TARGET is set by cargo.");
 
-        let profile = env::var("PROFILE")
-            .expect("The PROFILE is set by cargo.");
-
-        /*
-        WAF Options:
-        --build-type=BUILD_TYPE
-        whether to compile with (--build-type=release) or without (--build-type=debug) compiler opimizations
-        [default: release]
-        --debug               build in debug mode (see --build-type)
-        --enable-fftw3f       compile with fftw3f instead of ooura (recommended)
-        --disable-fftw3f      do not compile with fftw3f
-        --enable-fftw3        compile with fftw3 instead of ooura
-        --disable-fftw3       do not compile with fftw3
-        --enable-intelipp     use Intel IPP libraries (auto)
-        --disable-intelipp    do not use Intel IPP libraries
-        --enable-complex      compile with C99 complex
-        --disable-complex     do not use C99 complex (default)
-        --enable-jack         compile with jack (auto)
-        --disable-jack        disable jack support
-        --enable-sndfile      compile with sndfile (auto)
-        --disable-sndfile     disable sndfile
-        --enable-avcodec      compile with libavcodec (auto)
-        --disable-avcodec     disable libavcodec
-        --enable-samplerate   compile with samplerate (auto)
-        --disable-samplerate  disable samplerate
-        --enable-memcpy       use memcpy hacks (default)
-        --disable-memcpy      do not use memcpy hacks
-        --enable-double       compile in double precision mode
-        --disable-double      compile in single precision mode (default)
-        --enable-fat          build fat binaries (darwin only)
-        --disable-fat         do not build fat binaries (default)
-        --enable-accelerate   use Accelerate framework (darwin only) (auto)
-        --disable-accelerate  do not use Accelerate framework
-        --enable-apple-audio  use CoreFoundation (darwin only) (auto)
-        --disable-apple-audio
-        do not use CoreFoundation framework
-        --enable-blas         use BLAS acceleration library (no)
-        --disable-blas        do not use BLAS library
-        --enable-atlas        use ATLAS acceleration library (no)
-        --disable-atlas       do not use ATLAS library
-        --enable-wavread      compile with source_wavread (default)
-        --disable-wavread     do not compile source_wavread
-        --enable-wavwrite     compile with source_wavwrite (default)
-        --disable-wavwrite    do not compile source_wavwrite
-        --enable-docs         build documentation (auto)
-        --disable-docs        do not build documentation
-        --enable-tests        build tests (true)
-        --disable-tests       do not build or run tests
-        --enable-examples     build examples (true)
-        --disable-examples    do not build examples
-        --with-target-platform=TARGET_PLATFORM
-        set target platform for cross-compilation
-        --notests             Exec no unit tests
-        --alltests            Exec all unit tests
-        --clear-failed        Force failed unit tests to run again next time
-        --testcmd=TESTCMD     Run the unit tests using the test-cmd string example "--testcmd="valgrind --error-exitcode=1 %s" to run
-        under valgrind
-        --dump-test-scripts   Create python scripts to help debug tests
-
-        Configuration options:
-        -o OUT, --out=OUT   build dir for the project
-        -t TOP, --top=TOP   src dir for the project
-        --check-c-compiler=CHECK_C_COMPILER
-        list of C compilers to try [gcc clang icc]
-         */
-
-        let mut wafopts = String::new();
-
-        if profile == "debug" {
-            wafopts.push_str(" --debug");
-        }
-
-        let flags = [
-            ("docs", false),
-            ("tests", false),
-            ("examples", false),
-
-            ("fftw3f", cfg!(feature = "with-fftw3f")),
-            ("fftw3", cfg!(feature = "with-fftw3")),
-
-            ("wavread", cfg!(feature = "with-wav")),
-            ("wavwrite", cfg!(feature = "with-wav")),
-
-            ("jack", cfg!(feature = "with-jack")),
-            ("sndfile", cfg!(feature = "with-sndfile")),
-            ("avcodec", cfg!(feature = "with-avcodec")),
-            ("samplerate", cfg!(feature = "with-samplerate")),
-        ];
-
-        for &(flag, state) in &flags {
-            wafopts.push_str(if state { " --enable-" } else { " --disable-" });
-            wafopts.push_str(flag);
-        }
-
-        let mut toolchain_env = Vec::new();
+        let mut env = Vec::new();
 
         // For cargo: like "CARGO_TARGET_I686_LINUX_ANDROID_CC".  This is really weakly
         // documented; see https://github.com/rust-lang/cargo/issues/5690 and follow
@@ -196,39 +140,224 @@ mod utils {
 
         if let Ok(cc) = env::var(format!("CARGO_TARGET_{}_CC", target))
             .or_else(|_| env::var(format!("CC_{}", target))) {
-                toolchain_env.push(("CC", cc));
+                env.push(("CC", cc));
             }
         if let Ok(ar) = env::var(format!("CARGO_TARGET_{}_AR", target))
             .or_else(|_| env::var(format!("AR_{}", target))) {
-                toolchain_env.push(("AR", ar));
+                env.push(("AR", ar));
             }
         if let Ok(ld) = env::var(format!("CARGO_TARGET_{}_LINKER", target)) {
-            toolchain_env.push(("LINKER", ld));
+            env.push(("LINKER", ld));
         }
 
-        match Command::new("make")
-            .current_dir(src_dir)
-            .env("WAFOPTS", wafopts)
-            .envs(toolchain_env)
-            .output()
+        env
+    }
+
+    pub fn lib_file<S: AsRef<str>>(name: S, shared: bool) -> String {
+        #[cfg(target_os = "windows")]
         {
+            format!("{}.{}", name.as_ref(), if shared { "dll" } else { "lib" })
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            format!("lib{}.{}", name.as_ref(), if shared { "so" } else { "a" })
+        }
+    }
+
+    pub fn run_command(cmd: &mut Command) {
+        use std::{
+            process::Output,
+            str::from_utf8,
+        };
+
+        eprintln!("Run command: {:?}", cmd);
+
+        match cmd.output() {
             Err(error) => {
-                panic!("Error: Unable to execute `make` to build '{}' library due to: {}", lib_name, error);
+                panic!("Failed to run command '{:?}' due to: {}", cmd, error);
             },
             Ok(Output { status, stderr, .. }) => {
                 if !status.success() {
-                    panic!("Error: Compilation errors when building '{}' library: {}", lib_name,
-                           from_utf8(stderr.as_slice()).unwrap_or("<invalud UTF8 string>"));
+                    panic!("Command '{:?}' failed with error: {}", cmd,
+                           from_utf8(stderr.as_slice())
+                           .unwrap_or("<invalud UTF8 string>"));
                 }
             }
         }
+    }
 
-        println!("cargo:rustc-link-search=native={}", src_dir.join("build").join("src").display());
+    pub fn compile_library(src_dir: &Path, out_dir: &Path, config: &Config) {
+        let lib_dir = out_dir.join("src");
+
+        let lib_name = String::from("aubio");
+
+        if !lib_dir.join(lib_file(&lib_name, cfg!(feature = "shared"))).is_file() {
+            let profile = env::var("PROFILE")
+                .expect("The PROFILE is set by cargo.");
+
+            let num_jobs = env::var("NUM_JOBS")
+                .expect("The NUM_JOBS is set by cargo.");
+
+            let mut wafopts = String::new();
+
+            if profile == "debug" {
+                wafopts.push_str(" --debug");
+            }
+
+            let flags = [
+                ("docs", false),
+                ("tests", false),
+                ("examples", false),
+
+                ("double", cfg!(feature = "with-double")),
+
+                ("fftw3f", cfg!(all(feature = "with-fftw3", not(feature = "with-double")))),
+                ("fftw3", cfg!(all(feature = "with-fftw3", feature = "with-double"))),
+
+                ("wavread", cfg!(feature = "with-wav")),
+                ("wavwrite", cfg!(feature = "with-wav")),
+
+                ("jack", cfg!(feature = "with-jack")),
+                ("sndfile", cfg!(feature = "with-sndfile")),
+                ("avcodec", cfg!(feature = "with-avcodec")),
+                ("samplerate", cfg!(feature = "with-samplerate")),
+            ];
+
+            for &(flag, state) in &flags {
+                wafopts.push_str(if state { " --enable-" } else { " --disable-" });
+                wafopts.push_str(flag);
+            }
+
+            wafopts.push_str(" --out=");
+            wafopts.push_str(&out_dir.display().to_string());
+
+            let mut pkg_config_path = Vec::new();
+
+            if let Some(dir) = &config.fftw3_dir {
+                pkg_config_path.push(dir.display().to_string());
+            }
+
+            let mut env_vars = toolchain_env();
+
+            if pkg_config_path.len() > 0 {
+                env_vars.push(("PKG_CONFIG_PATH", pkg_config_path.join(":")));
+            }
+
+            run_command(Command::new("make")
+                        .current_dir(src_dir)
+                        .arg(format!("-j{}", num_jobs))
+                        .env("WAFOPTS", wafopts)
+                        .envs(env_vars));
+        }
+
+        println!("cargo:rustc-link-search=native={}", lib_dir.display());
 
         #[cfg(feature = "shared")]
         println!("cargo:rustc-link-lib={}", lib_name);
 
         #[cfg(not(feature = "shared"))]
         println!("cargo:rustc-link-lib=static={}", lib_name);
+    }
+
+    #[cfg(feature = "with-fftw3")]
+    pub mod fftw3 {
+        use super::{
+            toolchain_env,
+            run_command,
+            lib_file,
+        };
+
+        use std::{
+            env,
+            path::Path,
+        };
+
+        pub struct Source {
+            pub location: String,
+            pub version: String,
+        }
+
+        pub fn fetch_source(src: &Source, out_dir: &Path) {
+            use fetch_unroll::Fetch;
+
+            if !out_dir.is_dir() {
+                let src_url = format!("{pfx}{ver}.tar.gz",
+                                      pfx = src.location,
+                                      ver = src.version);
+
+                eprintln!("Fetch FFTW3 from {} to {}",
+                          src_url, out_dir.display());
+
+                Fetch::from(src_url).unroll().strip_components(1).to(out_dir)
+                    .expect("FFTW3 sources should be fetched.");
+            }
+        }
+
+        pub fn compile_library(src_dir: &Path, out_dir: &Path) {
+            use std::process::Command;
+
+            let lib_dir = out_dir.join("lib");
+
+            let lib_name = String::from(if cfg!(feature = "with-double") { "fftw3" } else { "fftw3f" });
+
+            if !lib_dir.join(lib_file(&lib_name, cfg!(feature = "shared"))).is_file() {
+
+                let profile = env::var("PROFILE")
+                    .expect("The PROFILE is set by cargo.");
+
+                let num_jobs = env::var("NUM_JOBS")
+                    .expect("The NUM_JOBS is set by cargo.");
+
+                let mut configure_args = Vec::new();
+
+                configure_args.push("--with-pic");
+
+                if cfg!(not(feature = "with-double")) {
+                    configure_args.push("--enable-single");
+                }
+
+                if cfg!(not(feature = "shared-fftw3")) {
+                    configure_args.push("--enable-static");
+                }
+
+                if cfg!(feature = "shared-fftw3") {
+                    configure_args.push("--enable-shared");
+                }
+
+                let mut env_vars = toolchain_env();
+
+                if profile == "debug" {
+                    env_vars.push(("CFLAGS", "-O0 -g3".into()));
+                }
+
+                if profile == "release" {
+                    env_vars.push(("CFLAGS", "-O3".into()));
+                }
+
+                run_command(Command::new("./configure")
+                            .current_dir(&src_dir)
+                            .envs(env_vars.clone())
+                            .arg(format!("--prefix={}", out_dir.display()))
+                            .args(configure_args));
+
+                run_command(Command::new("make")
+                            .current_dir(&src_dir)
+                            .envs(env_vars)
+                            .arg(format!("-j{}", num_jobs))
+                            .arg("install"));
+            }
+
+            #[cfg(not(feature = "nolink-fftw3"))]
+            {
+                println!("cargo:rustc-link-search=native={}", lib_dir.display());
+
+                #[cfg(feature = "shared-fftw3")]
+                println!("cargo:rustc-link-lib={}", lib_name);
+
+                #[cfg(not(feature = "shared-fftw3"))]
+                println!("cargo:rustc-link-lib=static={}", lib_name);
+            }
+        }
     }
 }
