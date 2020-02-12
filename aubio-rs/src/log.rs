@@ -1,12 +1,8 @@
-use crate::{
-    ffi,
-};
-
 use std::{
     ffi::{c_void, CStr},
     fmt::{Display, Formatter, Result as FmtResult},
-    ops::{Deref, DerefMut},
 };
+use crate::ffi;
 
 /**
  * Logging level
@@ -81,11 +77,41 @@ pub trait Logger {
 }
 
 /**
- * Closure logger wrapper
+Closure logger wrapper
+
+```
+# use aubio_lib as _;
+use aubio_rs::{Log, FnLogger};
+
+Log::set(FnLogger::from(|level, message: &str| {
+    eprintln!("[{}]: {}", level, message);
+}));
+```
  */
 pub struct FnLogger<F>(F);
 
-impl<F: FnMut(LogLevel, &str)> Logger for FnLogger<F> {
+impl<F> FnLogger<F>
+where
+    F: FnMut(LogLevel, &str)
+{
+    pub fn new(func: F) -> Self {
+        Self(func)
+    }
+}
+
+impl<F> From<F> for FnLogger<F>
+where
+    F: FnMut(LogLevel, &str)
+{
+    fn from(func: F) -> Self {
+        Self(func)
+    }
+}
+
+impl<F> Logger for FnLogger<F>
+where
+    F: FnMut(LogLevel, &str),
+{
     fn log(&mut self, level: LogLevel, message: &str) {
         (self.0)(level, message);
     }
@@ -98,30 +124,19 @@ impl<F: FnMut(LogLevel, &str)> Logger for FnLogger<F> {
  * Only one logger supported at a time.
  * You should keep logger from dropping while it used.
  */
-pub struct Log<T>(Box<T>);
+pub struct Log(Box<dyn Logger>);
 
-impl<T> Drop for Log<T> {
+impl Drop for Log {
     fn drop(&mut self) {
         unsafe { ffi::aubio_log_reset(); }
     }
 }
 
-impl<T> Deref for Log<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T> DerefMut for Log<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T: Logger> From<T> for Log<T> {
-    fn from(logger: T) -> Self {
+impl Log {
+    fn new<T>(logger: T) -> Self
+    where
+        T: Logger + 'static,
+    {
         let logger = Box::new(logger);
 
         unsafe {
@@ -135,13 +150,101 @@ impl<T: Logger> From<T> for Log<T> {
     }
 }
 
-impl<F: FnMut(LogLevel, &str)> Log<FnLogger<F>> {
-    pub fn from_fn(function: F) -> Self {
-        Log::from(FnLogger(function))
+fn with_global_logger(func: impl FnOnce(&mut Option<Log>)) {
+    use std::{
+        ptr::null_mut,
+        sync::{Arc, Mutex, Once},
+    };
+
+    static ONCE: Once = Once::new();
+    static mut LOG: *mut Arc<Mutex<Option<Log>>> = null_mut();
+
+    ONCE.call_once(|| {
+        unsafe { LOG = Box::into_raw(Box::new(Arc::new(Mutex::new(None)))); }
+    });
+
+    let log = (unsafe { &*LOG }).clone();
+    let mut log = log.lock().unwrap();
+
+    func(&mut log);
+}
+
+impl Log {
+    /// Set logger
+    pub fn set<T>(logger: T)
+    where
+        T: Logger + 'static,
+    {
+        with_global_logger(|global_logger| {
+            if global_logger.is_some() {
+                *global_logger = None;
+            }
+            *global_logger = Some(Log::new(logger));
+        });
+    }
+
+    /// Reset logger
+    pub fn reset() {
+        with_global_logger(|global_logger| {
+            *global_logger = None;
+        });
     }
 }
 
-unsafe extern "C" fn handler<T>(
+#[cfg(feature = "log")]
+pub use self::log::LogLogger;
+
+#[cfg(feature = "log")]
+mod log {
+    use log::{log, Level};
+    use super::{LogLevel, Logger};
+
+    /**
+    Logger implementation backed by [log](https://crates.io/crates/log) crate.
+
+    ```
+    # use aubio_lib as _;
+    use aubio_rs::{Log, LogLevel, LogLogger};
+
+    Log::set(LogLogger::default());
+    ```
+     */
+    pub struct LogLogger<S> {
+        target: S,
+    }
+
+    impl Default for LogLogger<&'static str> {
+        fn default() -> Self {
+            Self::new("aubio")
+        }
+    }
+
+    impl<S> LogLogger<S> {
+        pub fn new(target: S) -> Self {
+            Self { target }
+        }
+    }
+
+    impl<S: AsRef<str>> Logger for LogLogger<S> {
+        fn log(&mut self, level: LogLevel, message: &str) {
+            log!(target: self.target.as_ref(), level.into(), "{}", message);
+        }
+    }
+
+    impl Into<Level> for LogLevel {
+        fn into(self) -> Level {
+            match self {
+                LogLevel::Error => Level::Error,
+                LogLevel::Warning => Level::Warn,
+                LogLevel::Message => Level::Info,
+                LogLevel::Info => Level::Info,
+                LogLevel::Debug => Level::Debug,
+            }
+        }
+    }
+}
+
+extern "C" fn handler<T>(
         level: ffi::sint_t,
         message: *const ffi::char_t,
         data: *mut c_void,
@@ -151,9 +254,9 @@ where
 {
     assert!(!data.is_null());
 
-    let logger = &mut *(data as *mut T);
+    let logger = unsafe { &mut *(data as *mut T) };
     let level = LogLevel::from_ffi(level).unwrap();
-    let message = CStr::from_ptr(message).to_str().unwrap();
+    let message = unsafe { CStr::from_ptr(message).to_str().unwrap() };
 
     logger.log(level, message);
 }

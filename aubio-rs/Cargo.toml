@@ -17,6 +17,10 @@ edition = "2018"
 version = "0.1.2"
 path = "../aubio-sys"
 
+[dependencies.log]
+version = "^0.4"
+optional = true
+
 [dev-dependencies.hound]
 version = "^3"
 
