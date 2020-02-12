@@ -3,22 +3,40 @@ rust:
 - stable
 - beta
 - nightly
-env:
-- TARGETS="arm-unknown-linux-gnueabi aarch64-unknown-linux-gnu i686-unknown-linux-gnu
-  x86_64-unknown-linux-gnu mips-unknown-linux-gnu mips64-unknown-linux-gnuabi64 powerpc-unknown-linux-gnu
-  powerpc64-unknown-linux-gnu sparc64-unknown-linux-gnu"
+os:
+- linux
+- osx
+- windows
+cache: cargo
 script:
-- cd aubio-rs
 - |
-  for target in $TARGETS; do
-    rustup target add $target
-    cargo build --features generate-bindings,compile-library --verbose --all --target $target
-  done
-- cargo test --features generate-bindings,compile-library --verbose --all
-- cd -
-deploy:
-  provider: cargo
-  on:
-    tags: true
-  token:
-    secure: TMadmVWlLb0ZOiIijv/Wy1kP67PIfuSku3tyO1WObiCV50gmVxjXBh0hJz2QMPBIbBZNidPE9NR+9jLlWND53A49qG/r6jjwykR5EQdANQFzn8uHeK5jr9HZAhdnhvzz29tLf9t43uydbHmAxP6r7xRZXBqmSt6c0CTWwXzQtcoPbSDmluvcCwPVD1eLypJ8cjQTs3NaQlFhAi5ohncdJ+52msh54WOBSK1U2a0CnX0iwya+orGg/kW6zJE7f1OOsfBlzIOdHGSbcsueb+nyPt8VUZqIMCYaB+zBbGU5isAvnYEjFWkuF57rpusAGpGqWZff8HEU/b5mRh/CPxvlD4eEQf7u/3dE/jdhHb4VsOofU0EwTIo5r4IypyhJaX/c0HQ06JoUSoKF5HMLZpatRKtrs5mp6lZoJHDuGQu1Z/8yhEe2bjceAeQkZeM/1xNk/O4+aWu9WjXo4v9toBuAM2wB7SMBnRoWU5q1oMFeYLzQl9Zdai5VBM3Rx+0PBVSyFdUX5xfyyr2ZVGxIVZsXlZn+9yzkVNnx/o7bWTcIOi4urY7kRscKFdxZEJzujd4PXtvh/JZWV9LDiAfQbDTsQ0CTVqPv5OEuj8pQ+AfNXT6GuvYmY31QpdkgVHTpEM02o33Csr+U3QDAhvelu1UEjRz0/kFkHOtl3TfW8QyDXak=
+  cd aubio-sys
+  cargo test --release
+  cd -
+- |
+  cd aubio-lib
+  cargo test --release
+  cd -
+- |
+  cd aubio-rs
+  cargo test --release --features log
+  cd -
+jobs:
+  allow_failures:
+  - rust: nightly
+  include:
+  - stage: publish
+    script:
+    - |
+      cd aubio-sys
+      cargo publish || true
+      cd -
+    - |
+      cd aubio-lib
+      cargo publish || true
+      cd -
+    - |
+      cd aubio-rs
+      cargo publish || true
+      cd -
+    if: (type = push) && (tag =~ /^\d+\.\d+\.\d+/)
