@@ -1,11 +1,11 @@
 #[cfg(not(feature = "rustdoc"))]
 mod source {
-    pub const REPOSITORY: &str = "https://aubio.org/pub/aubio-";
+    pub const URL: &str = "https://github.com/katyo/{package}-rs/releases/download/{package}-{version}/{package}-{version}.tar.gz";
     pub const VERSION: &str = "0.4.9";
 
     #[cfg(feature = "with-fftw3")]
     pub mod fftw3 {
-        pub const LOCATION: &str = "http://www.fftw.org/fftw-";
+        pub const URL: &str = "http://www.fftw.org/{package}-{version}.tar.gz";
         pub const VERSION: &str = "3.3.8";
     }
 }
@@ -18,12 +18,13 @@ fn main() {
             path::Path,
         };
 
-        let src = utils::Source {
-            repository: env::var("AUBIO_REPOSITORY")
-                .unwrap_or(source::REPOSITORY.into()),
-            version: env::var("AUBIO_VERSION")
+        let src = utils::Source::new(
+            "aubio",
+            env::var("AUBIO_VERSION")
                 .unwrap_or(source::VERSION.into()),
-        };
+            env::var("AUBIO_URL")
+                .unwrap_or(source::URL.into()),
+        );
 
         let out_dir = env::var("OUT_DIR")
             .expect("The OUT_DIR is set by cargo.");
@@ -32,12 +33,13 @@ fn main() {
 
         #[cfg(feature = "with-fftw3")]
         let fftw3_dir = {
-            let src = utils::fftw3::Source {
-                location: env::var("FFTW3_LOCATION")
-                    .unwrap_or(source::fftw3::LOCATION.into()),
-                version: env::var("FFTW3_VERSION")
+            let src = utils::Source::new(
+                "fftw",
+                env::var("FFTW3_VERSION")
                     .unwrap_or(source::fftw3::VERSION.into()),
-            };
+                env::var("FFTW3_URL")
+                    .unwrap_or(source::fftw3::URL.into()),
+            );
 
             let src_dir = out_dir.join("fftw3-source")
                 .join(&src.version);
@@ -86,17 +88,30 @@ mod utils {
     }
 
     pub struct Source {
-        pub repository: String,
+        pub package: String,
         pub version: String,
+        pub url: String,
+    }
+
+    impl Source {
+        pub fn new(package: impl Into<String>, version: impl Into<String>, url: impl Into<String>) -> Self {
+            Self { package: package.into(),
+                   version: version.into(),
+                   url: url.into() }
+        }
+
+        pub fn url(&self) -> String {
+            self.url
+                .replace("{package}", &self.package)
+                .replace("{version}", &self.version)
+        }
     }
 
     pub fn fetch_source(src: &Source, out_dir: &Path) {
         use fetch_unroll::Fetch;
 
         if !out_dir.is_dir() {
-            let src_url = format!("{repo}{ver}.tar.gz",
-                                  repo = src.repository,
-                                  ver = src.version);
+            let src_url = src.url();
 
             eprintln!("Fetch fluidlite from {} to {}",
                       src_url, out_dir.display());
@@ -175,9 +190,11 @@ mod utils {
             Err(error) => {
                 panic!("Failed to run command '{:?}' due to: {}", cmd, error);
             },
-            Ok(Output { status, stderr, .. }) => {
+            Ok(Output { status, stdout, stderr, .. }) => {
                 if !status.success() {
-                    panic!("Command '{:?}' failed with error: {}", cmd,
+                    panic!("Command '{:?}' failed (stdout: {}) (stderr: {})", cmd,
+                           from_utf8(stdout.as_slice())
+                           .unwrap_or("<invalud UTF8 string>"),
                            from_utf8(stderr.as_slice())
                            .unwrap_or("<invalud UTF8 string>"));
                 }
@@ -186,7 +203,7 @@ mod utils {
     }
 
     pub fn compile_library(src_dir: &Path, out_dir: &Path, config: &Config) {
-        let lib_dir = out_dir.join("src");
+        let lib_dir = out_dir.join("lib");
 
         let lib_name = String::from("aubio");
 
@@ -197,14 +214,18 @@ mod utils {
             let profile = env::var("PROFILE")
                 .expect("The PROFILE is set by cargo.");
 
-            //let num_jobs = env::var("NUM_JOBS")
-            //    .expect("The NUM_JOBS is set by cargo.");
+            let num_jobs = env::var("NUM_JOBS")
+                .expect("The NUM_JOBS is set by cargo.");
 
-            let mut wafopts = String::new();
+            let mut wafargs = Vec::<String>::new();
 
-            if profile == "debug" {
-                wafopts.push_str(" --debug");
-            }
+            wafargs.push("--verbose".into());
+
+            wafargs.push("--build-type".into());
+            wafargs.push(profile);
+
+            wafargs.push("--jobs".into());
+            wafargs.push(num_jobs.to_string());
 
             let flags = [
                 ("docs", false),
@@ -226,12 +247,13 @@ mod utils {
             ];
 
             for &(flag, state) in &flags {
-                wafopts.push_str(if state { " --enable-" } else { " --disable-" });
-                wafopts.push_str(flag);
+                wafargs.push(format!("--{}-{}", if state { "enable" } else { "disable" }, flag));
             }
 
-            wafopts.push_str(" --out=");
-            wafopts.push_str(&out_dir.display().to_string());
+            wafargs.push("--out".into());
+            wafargs.push(out_dir.display().to_string());
+            wafargs.push("--prefix".into());
+            wafargs.push(out_dir.display().to_string());
 
             let mut pkg_config_path = Vec::new();
 
@@ -245,22 +267,14 @@ mod utils {
                 env_vars.push(("PKG_CONFIG_PATH", pkg_config_path.join(":")));
             }
 
-            env_vars.push(("WAFOPTS", wafopts));
-
-            let make = env::var("MAKE")
-                .unwrap_or("make".into());
-
-            run_command(Command::new(&make)
-                        .envs(env_vars.clone())
-                        .current_dir(src_dir)
-                        //.arg(format!("-j{}", num_jobs))
-                        .arg("checkwaf"));
-
-            run_command(Command::new(&make)
-                        .envs(env_vars.clone())
-                        .current_dir(src_dir)
-                        //.arg(format!("-j{}", num_jobs))
-                        .arg("build"));
+            for task in &["configure", "build", "install"] {
+                run_command(Command::new("python")
+                            .envs(env_vars.clone())
+                            .current_dir(src_dir)
+                            .arg("waf")
+                            .args(&wafargs)
+                            .arg(task));
+            }
         }
 
         println!("cargo:rustc-link-search=native={}", lib_dir.display());
@@ -279,22 +293,15 @@ mod utils {
 
     #[cfg(feature = "with-fftw3")]
     pub mod fftw3 {
-        use super::lib_file;
+        use super::{Source, lib_file};
 
         use std::path::Path;
-
-        pub struct Source {
-            pub location: String,
-            pub version: String,
-        }
 
         pub fn fetch_source(src: &Source, out_dir: &Path) {
             use fetch_unroll::Fetch;
 
             if !out_dir.is_dir() {
-                let src_url = format!("{pfx}{ver}.tar.gz",
-                                      pfx = src.location,
-                                      ver = src.version);
+                let src_url = src.url();
 
                 eprintln!("Fetch FFTW3 from {} to {}",
                           src_url, out_dir.display());

@@ -7,18 +7,8 @@ os:
 - linux
 - osx
 - windows
-before_install:
-- |
-  case $TRAVIS_OS_NAME in
-    "windows")
-      choco upgrade --no-progress -y make
-      ;;
-  esac
 cache:
   cargo: true
-  directories:
-  - $HOME/AppData/Local/Temp/chocolatey
-  - /C/tools/install
 script:
 - (cd aubio-sys && cargo test)
 - (cd aubio-lib && if [ "$TRAVIS_OS_NAME" != "windows" ]; then cargo test --features with-fftw3; else cargo test -vvv; fi)
