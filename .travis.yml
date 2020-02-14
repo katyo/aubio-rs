@@ -6,13 +6,15 @@ rust:
 os:
 - linux
 - osx
-- windows
+#- windows
 cache:
   cargo: true
 script:
-- (cd aubio-sys && cargo test)
-- (cd aubio-lib && if [ "$TRAVIS_OS_NAME" != "windows" ]; then cargo test --features with-fftw3; else cargo test -vvv; fi)
-- (cd aubio-rs && cargo test --features log)
+- (cd aubio-sys && cargo test --release)
+- (cd aubio-lib && cargo test --release)
+- (cd aubio-lib && cargo test --release --features with-fftw3)
+- (cd aubio-rs && cargo test --release)
+- (cd aubio-rs && cargo test --release --features log)
 jobs:
   allow_failures:
   - rust: nightly
