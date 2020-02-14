@@ -23,5 +23,6 @@ jobs:
     script:
     - (cd aubio-sys && cargo publish || true)
     - (cd aubio-lib && cargo publish || true)
+    - sleep 10
     - (cd aubio-rs && cargo publish || true)
     if: (type = push) && (tag =~ /^\d+\.\d+\.\d+/)
