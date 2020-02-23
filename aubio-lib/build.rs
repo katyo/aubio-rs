@@ -1,7 +1,7 @@
 #[cfg(not(feature = "rustdoc"))]
 mod source {
     pub const URL: &str = "https://github.com/katyo/{package}-rs/releases/download/{package}-{version}/{package}-{version}.tar.gz";
-    pub const VERSION: &str = "0.4.9";
+    pub const VERSION: &str = "0.5.0-git1f23a23d";
 
     #[cfg(feature = "with-fftw3")]
     pub mod fftw3 {
@@ -113,11 +113,11 @@ mod utils {
         if !out_dir.is_dir() {
             let src_url = src.url();
 
-            eprintln!("Fetch fluidlite from {} to {}",
+            eprintln!("Fetch aubio from {} to {}",
                       src_url, out_dir.display());
 
             Fetch::from(src_url).unroll().strip_components(1).to(out_dir)
-                .expect("FluidLite sources should be fetched.");
+                .expect("Aubio sources should be fetched.");
         }
     }
 
