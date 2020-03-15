@@ -12,6 +12,9 @@ edition = "2018"
 
 [badges]
 
+[dependencies.aubio-sys]
+version = "0.1.2"
+path = "../aubio-sys"
 
 [build-dependencies.fetch_unroll]
 version = "^0.2"
@@ -28,6 +31,8 @@ with-double = []
 with-fftw3 = ["cmake"]
 nolink-fftw3 = []
 shared-fftw3 = []
+
+build = ["aubio-sys/build"]
 
 [package.metadata.docs.rs]
 features = ["rustdoc"]

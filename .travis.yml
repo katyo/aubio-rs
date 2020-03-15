@@ -9,6 +9,14 @@ os:
 #- windows
 cache:
   cargo: true
+addons:
+  apt:
+    packages:
+      - libaubio-dev
+before_install:
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then brew unlink python@2; fi
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then brew update; fi
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then brew install aubio; fi
 script:
 - (cd aubio-sys && cargo test --release)
 - (cd aubio-lib && cargo test --release)
