@@ -15,7 +15,7 @@ You can simply add this as dependency to your manifest:
 
 ```toml
 [dependencies]
-aubio = "^0.1"
+aubio-rs = "^0.1"
 
 # Use bundled library to avoid unresolved links
 aubio-lib = "^0.1"
