@@ -159,7 +159,7 @@ impl SpecDesc {
      * - `method` Spectral description method
      * - `buf_size` Length of the input spectrum frame
      */
-    pub fn new<M: SpecMethod>(method: M, buf_size: usize) -> Result<Self> {
+    pub fn new(method: impl SpecMethod, buf_size: usize) -> Result<Self> {
         let specdesc = unsafe {
             ffi::new_aubio_specdesc(
                 method.as_native_cstr(),

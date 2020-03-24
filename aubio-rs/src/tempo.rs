@@ -8,6 +8,8 @@ use crate::{
         FVec,
         FVecMut,
     },
+    AsNativeStr,
+    OnsetMode,
 };
 
 /**
@@ -28,14 +30,16 @@ impl Tempo {
     /**
      * Create tempo detection object
      *
+     * - `method` Beat tracking method
      * - `buf_size` Length of FFT
      * - `hop_size` Number of frames between two consecutive runs
      * - `sample_rate` Sampling rate of the signal to analyze
      */
-    pub fn new(buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
+    pub fn new(method: OnsetMode, buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
+        // TODO: Use `SpecFlux` as default method for Tempo
         let tempo = unsafe {
             ffi::new_aubio_tempo(
-                "default\0".as_ptr() as *const _,
+                method.as_native_cstr(),
                 buf_size as ffi::uint_t,
                 hop_size as ffi::uint_t,
                 sample_rate as ffi::uint_t,
