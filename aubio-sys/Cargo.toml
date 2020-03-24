@@ -12,6 +12,8 @@ edition = "2018"
 
 [badges]
 
+[build-dependencies.pkg-config]
+version = "^0.3"
 
 [build-dependencies.fetch_unroll]
 version = "^0.2"
@@ -24,6 +26,7 @@ optional = true
 [features]
 generate-bindings = ["bindgen", "fetch_unroll"]
 rustdoc = []
+build = []
 
 [package.metadata.docs.rs]
 features = ["rustdoc"]

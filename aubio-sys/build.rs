@@ -1,3 +1,7 @@
+extern crate pkg_config;
+
+use std::env;
+
 #[cfg(feature = "generate-bindings")]
 mod source {
     pub const URL: &str = "https://github.com/katyo/{package}-rs/releases/download/{package}-{version}/{package}-{version}.tar.gz";
@@ -5,6 +9,21 @@ mod source {
 }
 
 fn main() {
+    let build = env::var("CARGO_FEATURE_BUILD").is_ok();
+    if !build {
+        match pkg_config::Config::new()
+            .atleast_version("0.4.9")
+            .probe("aubio")
+        {
+            Ok(paths) => {
+                for path in paths.include_paths {
+                    println!("{}", path.display());
+                }
+            }
+            Err(_) => (),
+        };
+    }
+
     #[cfg(feature = "generate-bindings")]
     {
         use std::{
