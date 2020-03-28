@@ -52,6 +52,7 @@ mod notes;
 mod mfcc;
 mod resampler;
 mod log;
+mod utils;
 
 pub mod vec;
 
@@ -67,6 +68,7 @@ pub use self::notes::*;
 pub use self::mfcc::*;
 pub use self::resampler::*;
 pub use self::log::*;
+pub use self::utils::*;
 
 #[macro_export]
 macro_rules! farr {
