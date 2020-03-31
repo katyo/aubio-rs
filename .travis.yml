@@ -14,9 +14,14 @@ addons:
     packages:
       - libaubio-dev
 before_install:
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then brew unlink python@2; fi
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then brew update; fi
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then brew install aubio; fi
+  - |-
+    case $TRAVIS_OS_NAME in
+      osx)
+        brew unlink python@2
+        brew update
+        brew install aubio
+        ;;
+    esac
 script:
 - (cd aubio-sys && cargo test --release)
 - (cd aubio-lib && cargo test --release)
