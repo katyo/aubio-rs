@@ -113,11 +113,11 @@ mod utils {
         if !out_dir.is_dir() {
             let src_url = src.url();
 
-            eprintln!("Fetch fluidlite from {} to {}",
+            eprintln!("Fetch aubio from {} to {}",
                       src_url, out_dir.display());
 
             Fetch::from(src_url).unroll().strip_components(1).to(out_dir)
-                .expect("FluidLite sources should be fetched.");
+                .expect("Aubio sources should be fetched.");
         }
     }
 
