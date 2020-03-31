@@ -16,6 +16,12 @@ addons:
 before_install:
   - |-
     case $TRAVIS_OS_NAME in
+      windows)
+        export PYTHONIOENCODING=utf-8
+        export PYTHONLEGACYWINDOWSSTDIO=1
+        export CC_NAME=gcc
+        export CC=gcc
+        ;;
       osx)
         brew unlink python@2
         brew update
@@ -25,7 +31,7 @@ before_install:
 script:
 - (cd aubio-sys && cargo test --release)
 - (cd aubio-lib && cargo test --release)
-- (cd aubio-lib && cargo test --release --features with-fftw3)
+- (cd aubio-lib && if [ "$TRAVIS_OS_NAME" != "windows" ]; then cargo test --release --features with-fftw3; fi)
 - (cd aubio-rs && cargo test --release)
 - (cd aubio-rs && cargo test --release --features log)
 jobs:
