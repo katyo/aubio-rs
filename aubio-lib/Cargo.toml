@@ -1,6 +1,6 @@
 [package]
 name = "aubio-lib"
-version = "0.1.2"
+version = "0.1.3"
 description = "Bundled aubio C library."
 categories = ["external-ffi-bindings", "multimedia::audio"]
 keywords = ["aubio", "audio", "processing", "recognition", "ffi"]
@@ -13,7 +13,7 @@ edition = "2018"
 [badges]
 
 [dependencies.aubio-sys]
-version = "0.1.2"
+version = "0.1.3"
 path = "../aubio-sys"
 
 [build-dependencies.fetch_unroll]
