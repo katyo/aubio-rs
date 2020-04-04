@@ -3,6 +3,9 @@ use crate::{
     Result,
 
     AsNativeStr,
+
+    ffi,
+    vec::FVecMut,
 };
 
 use std::{
@@ -11,7 +14,15 @@ use std::{
 };
 
 /**
- * The window type
+ * The window function type
+ *
+ * See:
+ * - [Window function](http://en.wikipedia.org/wiki/Window_function) on Wikipedia
+ * - Amalia de Götzen, Nicolas Bernardini, and Daniel Arfib. Traditional (?)
+ *   implementations of a phase vocoder: the tricks of the trade. In Proceedings of
+ *   the International Conference on Digital Audio Effects (DAFx-00), pages 37–44,
+ *   Uni- versity of Verona, Italy, 2000.
+ *   [pdf](http://www.cs.princeton.edu/courses/archive/spr09/cos325/Bernardini.pdf)
  */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum WindowType {
@@ -28,6 +39,9 @@ pub enum WindowType {
 }
 
 impl Default for WindowType {
+    /**
+     * Hanningz window by default
+     */
     fn default() -> Self {
         WindowType::Hanningz
     }
@@ -83,5 +97,17 @@ impl FromStr for WindowType {
             "parzen" => Parzen,
             _ => return Err(Error::InvalidArg),
         })
+    }
+}
+
+impl WindowType {
+    /**
+     * Set elements of a vector to window coefficients
+     */
+    pub fn set<'a, W>(&self, window: W)
+    where W: Into<FVecMut<'a>>,
+    {
+        let mut window = window.into();
+        unsafe { ffi::fvec_set_window(window.as_mut_ptr(), self.as_native_cstr() as *mut _) };
     }
 }
