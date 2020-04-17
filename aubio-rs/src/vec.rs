@@ -149,6 +149,18 @@ impl<'a> CVec<'a> {
         self.cvec.length as usize
     }
 
+    pub fn norm(&self) -> &[f32] {
+        unsafe {
+            std::slice::from_raw_parts(self.cvec.norm, self.size())
+        }
+    }
+
+    pub fn phas(&self) -> &[f32] {
+        unsafe {
+            std::slice::from_raw_parts(self.cvec.phas, self.size())
+        }
+    }
+
     #[cfg(not(feature = "check-size"))]
     #[inline]
     pub(crate) fn check_size(&self, _min_size: usize) -> Status { Ok(()) }
