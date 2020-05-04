@@ -2,7 +2,6 @@
  * Vector data wrappers
  */
 
-#[cfg(feature = "check-size")]
 use crate::Error;
 
 use crate::{ffi, Result, Status};
@@ -321,6 +320,172 @@ impl<'a, T: AsMut<[f32]>> From<T> for CVecPhasMut<'a> {
         let phas = data.as_mut();
         Self {
             cvec: CVecMut::from_phas(phas),
+        }
+    }
+}
+
+/**
+ * Immutable matrix of real valued data.
+ */
+#[repr(C)]
+pub struct FMat<'a, X> {
+    fmat: ffi::fmat_t,
+    _x: X,
+    _pd: PhantomData<&'a ()>,
+}
+
+impl<'a, X> FMat<'a, X> {
+    pub(crate) fn as_ptr(&'a self) -> *const ffi::fmat_t {
+        &self.fmat
+    }
+
+    pub fn length(&self) -> usize {
+        self.fmat.length as usize
+    }
+
+    pub fn height(&self) -> usize {
+        self.fmat.height as usize
+    }
+
+    /// Read sample value in a buffer 
+    pub fn get_sample(&self, channel: usize, position: usize) -> Result<f32> {
+        if channel >= self.height() || position >= self.length() {
+            return Err(Error::InvalidArg);
+        }
+        Ok(unsafe {
+            ffi::fmat_get_sample(
+                self.as_ptr(),
+                channel as ffi::uint_t,
+                position as ffi::uint_t,
+            )
+        })
+    }
+
+    pub fn get_vec(&self) -> Vec<&mut [f32]> {
+        let mut vec = Vec::with_capacity(self.height());
+        let mut ptr = self.fmat.data;
+        let end = self.fmat.data.wrapping_add(self.height());
+
+        while ptr != end {
+            vec.push(unsafe { std::slice::from_raw_parts_mut(*ptr, self.length()) });
+            ptr = ptr.wrapping_add(1);
+        }
+        vec
+    }
+}
+
+impl<'a> FMat<'a, ()> {
+    /**
+     * Create a matrix from an already existing `fmat_t` pointer.
+     *
+     * The matrix is non-owned; useful to avoid double-frees for `FilterBank`,
+     * for instance.
+     */
+    pub unsafe fn from_raw_ptr(ptr: *const ffi::fmat_t) -> Self {
+        FMat {
+            fmat: *ptr,
+            _x: (),
+            _pd: PhantomData,
+        }
+    }
+}
+
+pub type FMatVecs = Vec<*const f32>;
+
+
+impl<'a, T: AsRef<[&'a [f32]]>> From<T> for FMat<'a, FMatVecs> {
+    /**
+     * Create a matrix from a `FMatVecs`
+     *
+     * Matrix's horizontal height is the `Vec`'s len, and
+     * its vertical length the slice's len.
+     */
+    fn from(data: T) -> Self {
+        let data = data.as_ref();
+
+        #[cfg(feature = "check-size")]
+        {
+            let mut vecs = data.iter();
+            if let Some(fst) = vecs.next() {
+                let len = fst.len();
+                if len == 0 {
+                    panic!("No values in slice");
+                }
+                if vecs.any(|nxt| nxt.len() != len) {
+                    panic!("Slices have different lengths");
+                }
+            } else {
+                panic!("No slices in vec");
+            }
+        }
+
+        let array = data.iter().map(|v| v.as_ptr()).collect::<Vec<_>>();
+
+        Self {
+            fmat: ffi::fmat_t {
+                height: data.len() as _,
+                length: data[0].len() as _,
+                data: array.as_ptr() as _,
+            },
+            _x: array,
+            _pd: PhantomData,
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    #[cfg(feature = "check-size")]
+    fn test_from_fmat_wrong_size() {
+        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0, 6.0], &[7.0, 8.0, 9.0]];
+        let _fmat: FMat<_> = x.into();
+    }
+
+    #[test]
+    fn test_from_fmat() {
+        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
+        let fmat: FMat<_> = x.into();
+        assert_eq!(2, fmat.length());
+        assert_eq!(3, fmat.height());
+        
+        assert_eq!(1., fmat.get_sample(0, 0).unwrap());
+        assert_eq!(2., fmat.get_sample(0, 1).unwrap());
+        assert_eq!(4., fmat.get_sample(1, 0).unwrap());
+        assert_eq!(5., fmat.get_sample(1, 1).unwrap());
+        assert_eq!(7., fmat.get_sample(2, 0).unwrap());
+        assert_eq!(8., fmat.get_sample(2, 1).unwrap());
+    }
+
+    #[test]
+    fn test_to_vec() {
+        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
+        let fmat: FMat<_> = x.into();
+
+        let matrix = fmat.get_vec();
+
+        assert_eq!(matrix, vec![&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]]);
+    }
+
+
+    #[test]
+    fn test_get_sample_fmat_wrong_size() {
+        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
+        let fmat: FMat<_> = x.into();
+        
+        assert_eq!(Err(Error::InvalidArg), fmat.get_sample(70, 80));
+    }
+
+    #[test]
+    fn test_fmat_non_owned() {
+        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
+        let fmat: FMat<_> = x.into();
+
+        {
+            let _non_owned_fmat: FMat<()> = unsafe { FMat::from_raw_ptr(fmat.as_ptr()) };
         }
     }
 }
