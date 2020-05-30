@@ -17,8 +17,8 @@ fn main() {
 
         let src = utils::Source::new(
             "aubio",
-            env::var("AUBIO_VERSION").unwrap_or(source::VERSION.into()),
-            env::var("AUBIO_URL").unwrap_or(source::URL.into()),
+            env::var("AUBIO_VERSION").unwrap_or_else(|_| source::VERSION.into()),
+            env::var("AUBIO_URL").unwrap_or_else(|_| source::URL.into()),
         );
 
         let out_dir = env::var("OUT_DIR").expect("The OUT_DIR is set by cargo.");
@@ -139,7 +139,7 @@ mod utils {
             if source.starts_with("#! /bin/bash") {
                 File::create(&script)
                     .unwrap()
-                    .write(
+                    .write_all(
                         source
                             .replace("#! /bin/bash", "#!/usr/bin/env bash")
                             .as_bytes(),
@@ -240,7 +240,7 @@ mod utils {
             wafargs.push(profile);
 
             wafargs.push("--jobs".into());
-            wafargs.push(num_jobs.to_string());
+            wafargs.push(num_jobs);
 
             let flags = [
                 ("docs", false),
@@ -284,7 +284,7 @@ mod utils {
 
             let mut env_vars = toolchain_env();
 
-            if pkg_config_path.len() > 0 {
+            if !pkg_config_path.is_empty() {
                 env_vars.push(("PKG_CONFIG_PATH", pkg_config_path.join(":")));
             }
 

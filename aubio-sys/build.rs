@@ -11,17 +11,14 @@ mod source {
 fn main() {
     let build = env::var("CARGO_FEATURE_BUILD").is_ok();
     if !build {
-        match pkg_config::Config::new()
+        if let Ok(paths) = pkg_config::Config::new()
             .atleast_version("0.4.9")
             .probe("aubio")
         {
-            Ok(paths) => {
-                for path in paths.include_paths {
-                    println!("{}", path.display());
-                }
+            for path in paths.include_paths {
+                println!("{}", path.display());
             }
-            Err(_) => (),
-        };
+        }
     }
 
     #[cfg(feature = "generate-bindings")]

@@ -96,7 +96,7 @@ impl WindowType {
     /**
      * Set elements of a vector to window coefficients
      */
-    pub fn set<'a, W>(&self, window: W)
+    pub fn set<'a, W>(self, window: W)
     where
         W: Into<FVecMut<'a>>,
     {

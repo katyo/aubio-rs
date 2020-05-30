@@ -351,11 +351,7 @@ impl Onset {
      * Get onset detection adaptive whitening
      */
     pub fn get_awhitening(&self) -> bool {
-        if 0.0 < (unsafe { ffi::aubio_onset_get_awhitening(self.onset) }) {
-            true
-        } else {
-            false
-        }
+        0.0 < (unsafe { ffi::aubio_onset_get_awhitening(self.onset) })
     }
 
     /**
