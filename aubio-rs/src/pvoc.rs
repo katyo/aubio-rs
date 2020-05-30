@@ -1,17 +1,7 @@
 use crate::{
-    Error,
-    Result,
-    Status,
-
-    AsNativeStr,
-    WindowType,
-
-    ffi,
-    check_init,
-    vec::{
-        FVec, FVecMut,
-        CVec, CVecMut,
-    },
+    check_init, ffi,
+    vec::{CVec, CVecMut, FVec, FVecMut},
+    AsNativeStr, Error, Result, Status, WindowType,
 };
 
 /**
@@ -23,7 +13,9 @@ pub struct PVoc {
 
 impl Drop for PVoc {
     fn drop(&mut self) {
-        unsafe { ffi::del_aubio_pvoc(self.pvoc); }
+        unsafe {
+            ffi::del_aubio_pvoc(self.pvoc);
+        }
     }
 }
 
@@ -35,18 +27,11 @@ impl PVoc {
      * - `hop_size` Step size between two consecutive analysis
      */
     pub fn new(win_size: usize, hop_size: usize) -> Result<Self> {
-        let pvoc = unsafe {
-            ffi::new_aubio_pvoc(
-                win_size as ffi::uint_t,
-                hop_size as ffi::uint_t,
-            )
-        };
+        let pvoc = unsafe { ffi::new_aubio_pvoc(win_size as ffi::uint_t, hop_size as ffi::uint_t) };
 
         check_init(pvoc)?;
 
-        Ok(Self {
-            pvoc
-        })
+        Ok(Self { pvoc })
     }
 
     /**
@@ -93,7 +78,9 @@ impl PVoc {
         input.check_size(self.get_hop())?;
         fftgrain.check_size(self.get_win())?;
 
-        unsafe { ffi::aubio_pvoc_do(self.pvoc, input.as_ptr(), fftgrain.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_pvoc_do(self.pvoc, input.as_ptr(), fftgrain.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -118,7 +105,9 @@ impl PVoc {
         output.check_size(self.get_hop())?;
 
         // It seems the second arg have missing const qualifier so we need 'as *mut _' here
-        unsafe { ffi::aubio_pvoc_rdo(self.pvoc, fftgrain.as_ptr() as *mut _, output.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_pvoc_rdo(self.pvoc, fftgrain.as_ptr() as *mut _, output.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -145,7 +134,7 @@ mod test {
         let in_ = [1f32; HOP_S]; // input buffer
         let mut fftgrain = carr!(WIN_S); // fft norm and phase
         let mut out = farr!(HOP_S); // output buffer
-        // allocate fft and other memory space
+                                    // allocate fft and other memory space
         let mut pv = PVoc::new(WIN_S, HOP_S).unwrap();
 
         assert!(PVoc::new(WIN_S, 0).is_err());

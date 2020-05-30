@@ -1,13 +1,7 @@
 use crate::{
-    Result,
-    Status,
-
-    ffi,
-    check_init,
-    vec::{
-        FVec,
-        FVecMut,
-    },
+    check_init, ffi,
+    vec::{FVec, FVecMut},
+    Result, Status,
 };
 
 /**
@@ -24,11 +18,17 @@ impl Note {
         let mut notes = Vec::new();
 
         if values[2] != 0.0 {
-            notes.push(Self { pitch: values[2], velocity: 0.0 });
+            notes.push(Self {
+                pitch: values[2],
+                velocity: 0.0,
+            });
         }
 
         if values[0] != 0.0 {
-            notes.push(Self { pitch: values[0], velocity: values[1] });
+            notes.push(Self {
+                pitch: values[0],
+                velocity: values[1],
+            });
         }
 
         notes
@@ -146,7 +146,9 @@ impl Notes {
      * Set notes detection silence threshold
      */
     pub fn set_silence(&mut self, silence: f32) {
-        unsafe { ffi::aubio_notes_set_silence(self.notes, silence); }
+        unsafe {
+            ffi::aubio_notes_set_silence(self.notes, silence);
+        }
     }
 
     /**
@@ -160,7 +162,9 @@ impl Notes {
      * Set notes detection minimum inter-onset interval, in millisecond
      */
     pub fn set_minioi_ms(&mut self, minioi: f32) {
-        unsafe { ffi::aubio_notes_set_minioi_ms(self.notes, minioi); }
+        unsafe {
+            ffi::aubio_notes_set_minioi_ms(self.notes, minioi);
+        }
     }
 
     /**
@@ -174,7 +178,9 @@ impl Notes {
      * Set note release drop level, in dB
      */
     pub fn set_release_drop(&mut self, release_drop: f32) {
-        unsafe { ffi::aubio_notes_set_release_drop(self.notes, release_drop); }
+        unsafe {
+            ffi::aubio_notes_set_release_drop(self.notes, release_drop);
+        }
     }
 
     /**

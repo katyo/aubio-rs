@@ -1,15 +1,7 @@
 use crate::{
-    Result,
-    Status,
-
-    ffi,
-    check_init,
-    vec::{
-        FVec,
-        FVecMut,
-    },
-    AsNativeStr,
-    OnsetMode,
+    check_init, ffi,
+    vec::{FVec, FVecMut},
+    AsNativeStr, OnsetMode, Result, Status,
 };
 
 /**
@@ -35,7 +27,12 @@ impl Tempo {
      * - `hop_size` Number of frames between two consecutive runs
      * - `sample_rate` Sampling rate of the signal to analyze
      */
-    pub fn new(method: OnsetMode, buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
+    pub fn new(
+        method: OnsetMode,
+        buf_size: usize,
+        hop_size: usize,
+        sample_rate: u32,
+    ) -> Result<Self> {
         // TODO: Use `SpecFlux` as default method for Tempo
         let tempo = unsafe {
             ffi::new_aubio_tempo(
@@ -112,7 +109,9 @@ impl Tempo {
         input.check_size(self.get_hop())?;
         output.check_size(1)?;
 
-        unsafe { ffi::aubio_tempo_do(self.tempo, input.as_ptr(), output.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_tempo_do(self.tempo, input.as_ptr(), output.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -153,7 +152,9 @@ impl Tempo {
      * Set tempo detection silence threshold
      */
     pub fn set_silence(&mut self, silence: f32) {
-        unsafe { ffi::aubio_tempo_set_silence(self.tempo, silence); }
+        unsafe {
+            ffi::aubio_tempo_set_silence(self.tempo, silence);
+        }
     }
 
     /**
@@ -167,7 +168,9 @@ impl Tempo {
      * Set tempo detection peak picking threshold
      */
     pub fn set_threshold(&mut self, threshold: f32) {
-        unsafe { ffi::aubio_tempo_set_threshold(self.tempo, threshold); }
+        unsafe {
+            ffi::aubio_tempo_set_threshold(self.tempo, threshold);
+        }
     }
 
     /**
@@ -209,7 +212,9 @@ impl Tempo {
      * Set number of tatum per beat
      */
     pub fn set_tatum_signature(&mut self, signature: u32) {
-        unsafe { ffi::aubio_tempo_set_tatum_signature(self.tempo, signature); }
+        unsafe {
+            ffi::aubio_tempo_set_tatum_signature(self.tempo, signature);
+        }
     }
 
     /**
@@ -230,7 +235,9 @@ impl Tempo {
      * Set current delay in samples
      */
     pub fn set_delay(&mut self, delay: isize) {
-        unsafe { ffi::aubio_tempo_set_delay(self.tempo, delay as ffi::sint_t); }
+        unsafe {
+            ffi::aubio_tempo_set_delay(self.tempo, delay as ffi::sint_t);
+        }
     }
 
     /**
@@ -244,7 +251,9 @@ impl Tempo {
      * Set current delay in seconds
      */
     pub fn set_delay_s(&mut self, delay: f32) {
-        unsafe { ffi::aubio_tempo_set_delay_s(self.tempo, delay); }
+        unsafe {
+            ffi::aubio_tempo_set_delay_s(self.tempo, delay);
+        }
     }
 
     /**
@@ -258,7 +267,9 @@ impl Tempo {
      * Set current delay in milliseconds
      */
     pub fn set_delay_ms(&mut self, delay: f32) {
-        unsafe { ffi::aubio_tempo_set_delay_ms(self.tempo, delay); }
+        unsafe {
+            ffi::aubio_tempo_set_delay_ms(self.tempo, delay);
+        }
     }
 
     /**

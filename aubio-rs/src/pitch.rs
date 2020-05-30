@@ -1,16 +1,7 @@
 use crate::{
-    Error,
-    Result,
-    Status,
-
-    AsNativeStr,
-
-    ffi,
-    check_init,
-    vec::{
-        FVec,
-        FVecMut,
-    },
+    check_init, ffi,
+    vec::{FVec, FVecMut},
+    AsNativeStr, Error, Result, Status,
 };
 
 use std::{
@@ -235,7 +226,12 @@ impl Pitch {
      * - `hop_size` Step size between two consecutive analysis instant
      * - `sample_rate` Sampling rate of the signal
      */
-    pub fn new(method: PitchMode, buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
+    pub fn new(
+        method: PitchMode,
+        buf_size: usize,
+        hop_size: usize,
+        sample_rate: u32,
+    ) -> Result<Self> {
         let pitch = unsafe {
             ffi::new_aubio_pitch(
                 method.as_native_cstr(),
@@ -298,7 +294,9 @@ impl Pitch {
         input.check_size(self.get_hop())?;
         output.check_size(1)?;
 
-        unsafe { ffi::aubio_pitch_do(self.pitch, input.as_ptr(), output.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_pitch_do(self.pitch, input.as_ptr(), output.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -320,7 +318,9 @@ impl Pitch {
      * Change yin or yinfft tolerance threshold
      */
     pub fn set_tolerance(&mut self, tolerance: f32) {
-        unsafe { ffi::aubio_pitch_set_tolerance(self.pitch, tolerance); }
+        unsafe {
+            ffi::aubio_pitch_set_tolerance(self.pitch, tolerance);
+        }
     }
 
     /**
@@ -334,7 +334,9 @@ impl Pitch {
      * Set the silence threshold of the pitch detection object
      */
     pub fn set_silence(&mut self, silence: f32) {
-        unsafe { ffi::aubio_pitch_set_silence(self.pitch, silence); }
+        unsafe {
+            ffi::aubio_pitch_set_silence(self.pitch, silence);
+        }
     }
 
     /**
@@ -348,7 +350,9 @@ impl Pitch {
      * Set the output unit of the pitch detection object
      */
     pub fn set_unit(&mut self, unit: PitchUnit) {
-        unsafe { ffi::aubio_pitch_set_unit(self.pitch, unit.as_native_cstr()); }
+        unsafe {
+            ffi::aubio_pitch_set_unit(self.pitch, unit.as_native_cstr());
+        }
     }
 
     /**

@@ -1,17 +1,7 @@
 use crate::{
-    Error,
-    Result,
-    Status,
-
-    AsNativeStr,
-    SpecMethod,
-
-    ffi,
-    check_init,
-    vec::{
-        FVec,
-        FVecMut,
-    },
+    check_init, ffi,
+    vec::{FVec, FVecMut},
+    AsNativeStr, Error, Result, SpecMethod, Status,
 };
 
 use std::{
@@ -180,7 +170,12 @@ impl Onset {
      * - `hop_size` Hop size for phase vocoder
      * - `sample_rate` Sampling rate of the input signal
      */
-    pub fn new(method: OnsetMode, buf_size: usize, hop_size: usize, sample_rate: u32) -> Result<Self> {
+    pub fn new(
+        method: OnsetMode,
+        buf_size: usize,
+        hop_size: usize,
+        sample_rate: u32,
+    ) -> Result<Self> {
         let onset = unsafe {
             ffi::new_aubio_onset(
                 method.as_native_cstr(),
@@ -347,7 +342,9 @@ impl Onset {
      * Set onset detection adaptive whitening
      */
     pub fn set_awhitening(&mut self, enable: bool) {
-        unsafe { ffi::aubio_onset_set_awhitening(self.onset, if enable { 1 } else { 0 }); }
+        unsafe {
+            ffi::aubio_onset_set_awhitening(self.onset, if enable { 1 } else { 0 });
+        }
     }
 
     /**
@@ -365,7 +362,9 @@ impl Onset {
      * Set or disable log compression
      */
     pub fn set_compression(&mut self, lambda: f32) {
-        unsafe { ffi::aubio_onset_set_compression(self.onset, lambda); }
+        unsafe {
+            ffi::aubio_onset_set_compression(self.onset, lambda);
+        }
     }
 
     /**
@@ -379,7 +378,9 @@ impl Onset {
      * Set onset detection silence threshold
      */
     pub fn set_silence(&mut self, silence: f32) {
-        unsafe { ffi::aubio_onset_set_silence(self.onset, silence); }
+        unsafe {
+            ffi::aubio_onset_set_silence(self.onset, silence);
+        }
     }
 
     /**
@@ -407,7 +408,9 @@ impl Onset {
      * Set onset detection peak picking threshold
      */
     pub fn set_threshold(&mut self, threshold: f32) {
-        unsafe { ffi::aubio_onset_set_threshold(self.onset, threshold); }
+        unsafe {
+            ffi::aubio_onset_set_threshold(self.onset, threshold);
+        }
     }
 
     /**
@@ -421,7 +424,9 @@ impl Onset {
      * Set minimum inter onset interval in samples
      */
     pub fn set_minioi(&mut self, minioi: usize) {
-        unsafe { ffi::aubio_onset_set_minioi(self.onset, minioi as ffi::uint_t); }
+        unsafe {
+            ffi::aubio_onset_set_minioi(self.onset, minioi as ffi::uint_t);
+        }
     }
 
     /**
@@ -435,7 +440,9 @@ impl Onset {
      * Set minimum inter onset interval in seconds
      */
     pub fn set_minioi_s(&mut self, minioi: f32) {
-        unsafe { ffi::aubio_onset_set_minioi_s(self.onset, minioi); }
+        unsafe {
+            ffi::aubio_onset_set_minioi_s(self.onset, minioi);
+        }
     }
 
     /**
@@ -449,7 +456,9 @@ impl Onset {
      * Set minimum inter onset interval in milliseconds
      */
     pub fn set_minioi_ms(&mut self, minioi: f32) {
-        unsafe { ffi::aubio_onset_set_minioi_ms(self.onset, minioi); }
+        unsafe {
+            ffi::aubio_onset_set_minioi_ms(self.onset, minioi);
+        }
     }
 
     /**
@@ -463,7 +472,9 @@ impl Onset {
      * Set delay in samples
      */
     pub fn set_delay(&mut self, delay: usize) {
-        unsafe { ffi::aubio_onset_set_delay(self.onset, delay as ffi::uint_t); }
+        unsafe {
+            ffi::aubio_onset_set_delay(self.onset, delay as ffi::uint_t);
+        }
     }
 
     /**
@@ -477,7 +488,9 @@ impl Onset {
      * Set delay in seconds
      */
     pub fn set_delay_s(&mut self, delay: f32) {
-        unsafe { ffi::aubio_onset_set_delay_s(self.onset, delay); }
+        unsafe {
+            ffi::aubio_onset_set_delay_s(self.onset, delay);
+        }
     }
 
     /**
@@ -491,7 +504,9 @@ impl Onset {
      * Set delay in milliseconds
      */
     pub fn set_delay_ms(&mut self, delay: f32) {
-        unsafe { ffi::aubio_onset_set_delay_ms(self.onset, delay); }
+        unsafe {
+            ffi::aubio_onset_set_delay_ms(self.onset, delay);
+        }
     }
 
     /**
@@ -506,10 +521,7 @@ impl Onset {
      */
     pub fn set_default_parameters(&mut self, mode: OnsetMode) {
         unsafe {
-            ffi::aubio_onset_set_default_parameters(
-                self.onset,
-                mode.as_native_cstr(),
-            );
+            ffi::aubio_onset_set_default_parameters(self.onset, mode.as_native_cstr());
         }
     }
 
@@ -517,7 +529,9 @@ impl Onset {
      * Reset onset detection
      */
     pub fn reset(&mut self) {
-        unsafe { ffi::aubio_onset_reset(self.onset); }
+        unsafe {
+            ffi::aubio_onset_reset(self.onset);
+        }
     }
 }
 
@@ -544,7 +558,9 @@ mod test {
         // SAMPLERATE < 1
         assert!(Onset::new(Default::default(), 1024, 512, 0).is_err());
         // pv creation might fail
-        assert_eq!(Onset::new(Default::default(), 5, 2, SAMPLERATE).is_ok(),
-                   cfg!(any(feature = "with-fftw3", feature = "with-fftw3f")));
+        assert_eq!(
+            Onset::new(Default::default(), 5, 2, SAMPLERATE).is_ok(),
+            cfg!(any(feature = "with-fftw3", feature = "with-fftw3f"))
+        );
     }
 }

@@ -1,12 +1,4 @@
-use crate::{
-    Error,
-    Result,
-
-    AsNativeStr,
-
-    ffi,
-    vec::FVecMut,
-};
+use crate::{ffi, vec::FVecMut, AsNativeStr, Error, Result};
 
 use std::{
     fmt::{Display, Formatter, Result as FmtResult},
@@ -105,7 +97,8 @@ impl WindowType {
      * Set elements of a vector to window coefficients
      */
     pub fn set<'a, W>(&self, window: W)
-    where W: Into<FVecMut<'a>>,
+    where
+        W: Into<FVecMut<'a>>,
     {
         let mut window = window.into();
         unsafe { ffi::fvec_set_window(window.as_mut_ptr(), self.as_native_cstr() as *mut _) };

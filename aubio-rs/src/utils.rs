@@ -1,4 +1,7 @@
-use crate::{ffi, vec::{FVec, FVecMut}};
+use crate::{
+    ffi,
+    vec::{FVec, FVecMut},
+};
 
 /**
  * Compute the principal argument
@@ -157,7 +160,8 @@ pub fn midi_to_freq(midi: f32) -> f32 {
  * - `input` Vector to compute ZCR from
  */
 pub fn zero_crossing_rate<'i, I>(input: I) -> f32
-where I: Into<FVec<'i>>
+where
+    I: Into<FVec<'i>>,
 {
     let input = input.into();
     unsafe { ffi::aubio_zero_crossing_rate(input.as_ptr() as *mut _) }
@@ -171,7 +175,8 @@ where I: Into<FVec<'i>>
  * - `input` Vector to compute level from
  */
 pub fn level_lin<'i, I>(input: I) -> f32
-where I: Into<FVec<'i>>
+where
+    I: Into<FVec<'i>>,
 {
     let input = input.into();
     unsafe { ffi::aubio_level_lin(input.as_ptr()) }
@@ -186,7 +191,8 @@ where I: Into<FVec<'i>>
  * - `input` Vector to compute dB SPL from.
  */
 pub fn db_spl<'i, I>(input: I) -> f32
-where I: Into<FVec<'i>>
+where
+    I: Into<FVec<'i>>,
 {
     let input = input.into();
     unsafe { ffi::aubio_db_spl(input.as_ptr()) }
@@ -204,7 +210,8 @@ where I: Into<FVec<'i>>
  * - `threshold` Threshold in dB SPL
  */
 pub fn silence_detection<'i, I>(input: I, threshold: f32) -> bool
-where I: Into<FVec<'i>>
+where
+    I: Into<FVec<'i>>,
 {
     let input = input.into();
     0 != unsafe { ffi::aubio_silence_detection(input.as_ptr(), threshold) }
@@ -217,7 +224,8 @@ where I: Into<FVec<'i>>
  * - `threshold` Threshold in dB SPL
  */
 pub fn level_detection<'i, I>(input: I, threshold: f32) -> f32
-where I: Into<FVec<'i>>
+where
+    I: Into<FVec<'i>>,
 {
     let input = input.into();
     unsafe { ffi::aubio_level_detection(input.as_ptr(), threshold) }
@@ -231,7 +239,8 @@ impl<'a> FVec<'a> {
      * - `absmax` Maximum value over which input vector elements should be clamped
      */
     pub fn clamp<'i, I>(input: I, absmax: f32)
-    where I: Into<FVecMut<'i>>
+    where
+        I: Into<FVecMut<'i>>,
     {
         let mut input = input.into();
         unsafe { ffi::fvec_clamp(input.as_mut_ptr(), absmax) };

@@ -13,21 +13,15 @@ mod source {
 fn main() {
     #[cfg(not(feature = "rustdoc"))]
     {
-        use std::{
-            env,
-            path::Path,
-        };
+        use std::{env, path::Path};
 
         let src = utils::Source::new(
             "aubio",
-            env::var("AUBIO_VERSION")
-                .unwrap_or(source::VERSION.into()),
-            env::var("AUBIO_URL")
-                .unwrap_or(source::URL.into()),
+            env::var("AUBIO_VERSION").unwrap_or(source::VERSION.into()),
+            env::var("AUBIO_URL").unwrap_or(source::URL.into()),
         );
 
-        let out_dir = env::var("OUT_DIR")
-            .expect("The OUT_DIR is set by cargo.");
+        let out_dir = env::var("OUT_DIR").expect("The OUT_DIR is set by cargo.");
 
         let out_dir = Path::new(&out_dir);
 
@@ -35,17 +29,13 @@ fn main() {
         let fftw3_dir = {
             let src = utils::Source::new(
                 "fftw",
-                env::var("FFTW3_VERSION")
-                    .unwrap_or(source::fftw3::VERSION.into()),
-                env::var("FFTW3_URL")
-                    .unwrap_or(source::fftw3::URL.into()),
+                env::var("FFTW3_VERSION").unwrap_or(source::fftw3::VERSION.into()),
+                env::var("FFTW3_URL").unwrap_or(source::fftw3::URL.into()),
             );
 
-            let src_dir = out_dir.join("fftw3-source")
-                .join(&src.version);
+            let src_dir = out_dir.join("fftw3-source").join(&src.version);
 
-            let bld_dir = out_dir.join("fftw3-build")
-                .join(&src.version);
+            let bld_dir = out_dir.join("fftw3-build").join(&src.version);
 
             utils::fftw3::fetch_source(&src, &src_dir);
 
@@ -54,11 +44,9 @@ fn main() {
             bld_dir.join("lib").join("pkgconfig").to_owned()
         };
 
-        let src_dir = out_dir.join("source")
-            .join(&src.version);
+        let src_dir = out_dir.join("source").join(&src.version);
 
-        let bld_dir = out_dir.join("build")
-            .join(&src.version);
+        let bld_dir = out_dir.join("build").join(&src.version);
 
         let config = utils::Config {
             #[cfg(feature = "with-fftw3")]
@@ -94,10 +82,16 @@ mod utils {
     }
 
     impl Source {
-        pub fn new(package: impl Into<String>, version: impl Into<String>, url: impl Into<String>) -> Self {
-            Self { package: package.into(),
-                   version: version.into(),
-                   url: url.into() }
+        pub fn new(
+            package: impl Into<String>,
+            version: impl Into<String>,
+            url: impl Into<String>,
+        ) -> Self {
+            Self {
+                package: package.into(),
+                version: version.into(),
+                url: url.into(),
+            }
         }
 
         pub fn url(&self) -> String {
@@ -113,34 +107,50 @@ mod utils {
         if !out_dir.is_dir() {
             let src_url = src.url();
 
-            eprintln!("Fetch aubio from {} to {}",
-                      src_url, out_dir.display());
+            eprintln!("Fetch aubio from {} to {}", src_url, out_dir.display());
 
-            Fetch::from(src_url).unroll().strip_components(1).to(out_dir)
+            Fetch::from(src_url)
+                .unroll()
+                .strip_components(1)
+                .to(out_dir)
                 .expect("Aubio sources should be fetched.");
         }
     }
 
     pub fn fix_source(src_dir: &Path) {
         use std::{
-            io::{Read, Write},
             fs::File,
+            io::{Read, Write},
         };
 
         let scripts = src_dir.join("scripts");
-        for script in &["get_waf.sh", "build_mingw", "build_android", "build_emscripten"] {
+        for script in &[
+            "get_waf.sh",
+            "build_mingw",
+            "build_android",
+            "build_emscripten",
+        ] {
             let script = scripts.join(script);
             let mut source = String::new();
-            File::open(&script).unwrap().read_to_string(&mut source).unwrap();
+            File::open(&script)
+                .unwrap()
+                .read_to_string(&mut source)
+                .unwrap();
             if source.starts_with("#! /bin/bash") {
-                File::create(&script).unwrap().write(source.replace("#! /bin/bash", "#!/usr/bin/env bash").as_bytes()).unwrap();
+                File::create(&script)
+                    .unwrap()
+                    .write(
+                        source
+                            .replace("#! /bin/bash", "#!/usr/bin/env bash")
+                            .as_bytes(),
+                    )
+                    .unwrap();
             }
         }
     }
 
     pub fn toolchain_env() -> Vec<(&'static str, String)> {
-        let target = env::var("TARGET")
-            .expect("The TARGET is set by cargo.");
+        let target = env::var("TARGET").expect("The TARGET is set by cargo.");
 
         let mut env = Vec::new();
 
@@ -152,13 +162,15 @@ mod utils {
         // https://github.com/alexcrichton/cc-rs#external-configuration-via-environment-variables.
 
         if let Ok(cc) = env::var(format!("CARGO_TARGET_{}_CC", target))
-            .or_else(|_| env::var(format!("CC_{}", target))) {
-                env.push(("CC", cc));
-            }
+            .or_else(|_| env::var(format!("CC_{}", target)))
+        {
+            env.push(("CC", cc));
+        }
         if let Ok(ar) = env::var(format!("CARGO_TARGET_{}_AR", target))
-            .or_else(|_| env::var(format!("AR_{}", target))) {
-                env.push(("AR", ar));
-            }
+            .or_else(|_| env::var(format!("AR_{}", target)))
+        {
+            env.push(("AR", ar));
+        }
         if let Ok(ld) = env::var(format!("CARGO_TARGET_{}_LINKER", target)) {
             env.push(("LINKER", ld));
         }
@@ -179,24 +191,27 @@ mod utils {
     }
 
     pub fn run_command(cmd: &mut Command) {
-        use std::{
-            process::Output,
-            str::from_utf8,
-        };
+        use std::{process::Output, str::from_utf8};
 
         eprintln!("Run command: {:?}", cmd);
 
         match cmd.output() {
             Err(error) => {
                 panic!("Failed to run command '{:?}' due to: {}", cmd, error);
-            },
-            Ok(Output { status, stdout, stderr, .. }) => {
+            }
+            Ok(Output {
+                status,
+                stdout,
+                stderr,
+                ..
+            }) => {
                 if !status.success() {
-                    panic!("Command '{:?}' failed (stdout: {}) (stderr: {})", cmd,
-                           from_utf8(stdout.as_slice())
-                           .unwrap_or("<invalud UTF8 string>"),
-                           from_utf8(stderr.as_slice())
-                           .unwrap_or("<invalud UTF8 string>"));
+                    panic!(
+                        "Command '{:?}' failed (stdout: {}) (stderr: {})",
+                        cmd,
+                        from_utf8(stdout.as_slice()).unwrap_or("<invalud UTF8 string>"),
+                        from_utf8(stderr.as_slice()).unwrap_or("<invalud UTF8 string>")
+                    );
                 }
             }
         }
@@ -207,15 +222,15 @@ mod utils {
 
         let lib_name = String::from("aubio");
 
-        let target = env::var("TARGET")
-            .expect("The TARGET is set by cargo.");
+        let target = env::var("TARGET").expect("The TARGET is set by cargo.");
 
-        if !lib_dir.join(lib_file(&lib_name, cfg!(feature = "shared"))).is_file() {
-            let profile = env::var("PROFILE")
-                .expect("The PROFILE is set by cargo.");
+        if !lib_dir
+            .join(lib_file(&lib_name, cfg!(feature = "shared")))
+            .is_file()
+        {
+            let profile = env::var("PROFILE").expect("The PROFILE is set by cargo.");
 
-            let num_jobs = env::var("NUM_JOBS")
-                .expect("The NUM_JOBS is set by cargo.");
+            let num_jobs = env::var("NUM_JOBS").expect("The NUM_JOBS is set by cargo.");
 
             let mut wafargs = Vec::<String>::new();
 
@@ -231,15 +246,17 @@ mod utils {
                 ("docs", false),
                 ("tests", false),
                 ("examples", false),
-
                 ("double", cfg!(feature = "with-double")),
-
-                ("fftw3f", cfg!(all(feature = "with-fftw3", not(feature = "with-double")))),
-                ("fftw3", cfg!(all(feature = "with-fftw3", feature = "with-double"))),
-
+                (
+                    "fftw3f",
+                    cfg!(all(feature = "with-fftw3", not(feature = "with-double"))),
+                ),
+                (
+                    "fftw3",
+                    cfg!(all(feature = "with-fftw3", feature = "with-double")),
+                ),
                 ("wavread", cfg!(feature = "with-wav")),
                 ("wavwrite", cfg!(feature = "with-wav")),
-
                 ("jack", cfg!(feature = "with-jack")),
                 ("sndfile", cfg!(feature = "with-sndfile")),
                 ("avcodec", cfg!(feature = "with-avcodec")),
@@ -247,7 +264,11 @@ mod utils {
             ];
 
             for &(flag, state) in &flags {
-                wafargs.push(format!("--{}-{}", if state { "enable" } else { "disable" }, flag));
+                wafargs.push(format!(
+                    "--{}-{}",
+                    if state { "enable" } else { "disable" },
+                    flag
+                ));
             }
 
             wafargs.push("--out".into());
@@ -268,12 +289,14 @@ mod utils {
             }
 
             for task in &["configure", "build", "install"] {
-                run_command(Command::new("python")
-                            .envs(env_vars.clone())
-                            .current_dir(src_dir)
-                            .arg("waf")
-                            .args(&wafargs)
-                            .arg(task));
+                run_command(
+                    Command::new("python")
+                        .envs(env_vars.clone())
+                        .current_dir(src_dir)
+                        .arg("waf")
+                        .args(&wafargs)
+                        .arg(task),
+                );
             }
         }
 
@@ -293,7 +316,7 @@ mod utils {
 
     #[cfg(feature = "with-fftw3")]
     pub mod fftw3 {
-        use super::{Source, lib_file};
+        use super::{lib_file, Source};
 
         use std::path::Path;
 
@@ -303,10 +326,12 @@ mod utils {
             if !out_dir.is_dir() {
                 let src_url = src.url();
 
-                eprintln!("Fetch FFTW3 from {} to {}",
-                          src_url, out_dir.display());
+                eprintln!("Fetch FFTW3 from {} to {}", src_url, out_dir.display());
 
-                Fetch::from(src_url).unroll().strip_components(1).to(out_dir)
+                Fetch::from(src_url)
+                    .unroll()
+                    .strip_components(1)
+                    .to(out_dir)
                     .expect("FFTW3 sources should be fetched.");
             }
         }
@@ -316,19 +341,33 @@ mod utils {
 
             let lib_dir = out_dir.join("lib");
 
-            let lib_name = String::from(if cfg!(feature = "with-double") { "fftw3" } else { "fftw3f" });
+            let lib_name = String::from(if cfg!(feature = "with-double") {
+                "fftw3"
+            } else {
+                "fftw3f"
+            });
 
-            if !lib_dir.join(lib_file(&lib_name, cfg!(feature = "shared"))).is_file() {
+            if !lib_dir
+                .join(lib_file(&lib_name, cfg!(feature = "shared")))
+                .is_file()
+            {
                 use std::fs::{create_dir_all, rename};
 
                 create_dir_all(out_dir).unwrap();
 
                 fn bool_flag(flag: bool) -> &'static str {
-                    if flag { "ON" } else { "OFF" }
+                    if flag {
+                        "ON"
+                    } else {
+                        "OFF"
+                    }
                 }
 
                 let _library = Config::new(src_dir)
-                    .define("BUILD_SHARED_LIBS", bool_flag(cfg!(feature = "shared-fftw3")))
+                    .define(
+                        "BUILD_SHARED_LIBS",
+                        bool_flag(cfg!(feature = "shared-fftw3")),
+                    )
                     .define("BUILD_TESTS", bool_flag(false))
                     .define("ENABLE_FLOAT", bool_flag(!cfg!(feature = "with-double")))
                     .define("DISABLE_FORTRAN", bool_flag(true))
@@ -344,7 +383,8 @@ mod utils {
                     .out_dir(out_dir)
                     .build();
 
-                { // fix misnamed pkg configs
+                {
+                    // fix misnamed pkg configs
                     let pc_dir = out_dir.join("lib").join("pkgconfig");
 
                     #[cfg(not(feature = "with-double"))]

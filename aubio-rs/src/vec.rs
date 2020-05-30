@@ -3,21 +3,14 @@
  */
 
 #[cfg(feature = "check-size")]
-use crate::{
-    Error,
-};
+use crate::Error;
 
-use crate::{
-    Result,
-    Status,
-
-    ffi,
-};
+use crate::{ffi, Result, Status};
 
 use std::{
-    ptr::null_mut,
     marker::PhantomData,
     ops::{Deref, DerefMut},
+    ptr::null_mut,
 };
 
 /**
@@ -40,7 +33,9 @@ impl<'a> FVec<'a> {
 
     #[cfg(not(feature = "check-size"))]
     #[inline]
-    pub(crate) fn check_size(&self, _min_size: usize) -> Status { Ok(()) }
+    pub(crate) fn check_size(&self, _min_size: usize) -> Status {
+        Ok(())
+    }
 
     #[cfg(feature = "check-size")]
     #[inline]
@@ -86,7 +81,9 @@ impl<'a> FVecMut<'a> {
 
     #[cfg(not(feature = "check-size"))]
     #[inline]
-    pub(crate) fn check_size(&self, _min_size: usize) -> Status { Ok(()) }
+    pub(crate) fn check_size(&self, _min_size: usize) -> Status {
+        Ok(())
+    }
 
     #[cfg(feature = "check-size")]
     #[inline]
@@ -150,20 +147,18 @@ impl<'a> CVec<'a> {
     }
 
     pub fn norm(&self) -> &[f32] {
-        unsafe {
-            std::slice::from_raw_parts(self.cvec.norm, self.size())
-        }
+        unsafe { std::slice::from_raw_parts(self.cvec.norm, self.size()) }
     }
 
     pub fn phas(&self) -> &[f32] {
-        unsafe {
-            std::slice::from_raw_parts(self.cvec.phas, self.size())
-        }
+        unsafe { std::slice::from_raw_parts(self.cvec.phas, self.size()) }
     }
 
     #[cfg(not(feature = "check-size"))]
     #[inline]
-    pub(crate) fn check_size(&self, _min_size: usize) -> Status { Ok(()) }
+    pub(crate) fn check_size(&self, _min_size: usize) -> Status {
+        Ok(())
+    }
 
     #[cfg(feature = "check-size")]
     #[inline]
@@ -179,7 +174,7 @@ impl<'a> CVec<'a> {
 impl<'a, T: AsRef<[f32]>> From<T> for CVec<'a> {
     fn from(data: T) -> Self {
         let data = data.as_ref();
-        let (norm, phas) = data.split_at(data.len()/2);
+        let (norm, phas) = data.split_at(data.len() / 2);
         Self::from_parts(norm, phas).unwrap()
     }
 }
@@ -245,7 +240,9 @@ impl<'a> CVecMut<'a> {
 
     #[cfg(not(feature = "check-size"))]
     #[inline]
-    pub(crate) fn check_size(&self, _min_size: usize) -> Status { Ok(()) }
+    pub(crate) fn check_size(&self, _min_size: usize) -> Status {
+        Ok(())
+    }
 
     #[cfg(feature = "check-size")]
     #[inline]
@@ -261,7 +258,7 @@ impl<'a> CVecMut<'a> {
 impl<'a, T: AsMut<[f32]>> From<T> for CVecMut<'a> {
     fn from(mut data: T) -> Self {
         let data = data.as_mut();
-        let (norm, phas) = data.split_at_mut(data.len()/2);
+        let (norm, phas) = data.split_at_mut(data.len() / 2);
         Self::from_parts(norm, phas).unwrap()
     }
 }
@@ -291,7 +288,9 @@ impl<'a> DerefMut for CVecNormMut<'a> {
 impl<'a, T: AsMut<[f32]>> From<T> for CVecNormMut<'a> {
     fn from(mut data: T) -> Self {
         let norm = data.as_mut();
-        Self { cvec: CVecMut::from_norm(norm) }
+        Self {
+            cvec: CVecMut::from_norm(norm),
+        }
     }
 }
 
@@ -320,6 +319,8 @@ impl<'a> DerefMut for CVecPhasMut<'a> {
 impl<'a, T: AsMut<[f32]>> From<T> for CVecPhasMut<'a> {
     fn from(mut data: T) -> Self {
         let phas = data.as_mut();
-        Self { cvec: CVecMut::from_phas(phas) }
+        Self {
+            cvec: CVecMut::from_phas(phas),
+        }
     }
 }

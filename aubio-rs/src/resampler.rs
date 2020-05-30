@@ -1,14 +1,7 @@
 use crate::{
-    Error,
-    Result,
-    Status,
-
-    ffi,
-    check_init,
-    vec::{
-        FVec,
-        FVecMut,
-    },
+    check_init, ffi,
+    vec::{FVec, FVecMut},
+    Error, Result, Status,
 };
 
 use std::{
@@ -94,12 +87,7 @@ impl Resampler {
      * - `type` Resampling method
      */
     pub fn new(ratio: f32, mode: ResampleMode) -> Result<Self> {
-        let resampler = unsafe {
-            ffi::new_aubio_resampler(
-                ratio,
-                mode as ffi::uint_t,
-            )
-        };
+        let resampler = unsafe { ffi::new_aubio_resampler(ratio, mode as ffi::uint_t) };
 
         check_init(resampler)?;
 

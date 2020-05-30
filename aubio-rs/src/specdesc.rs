@@ -1,16 +1,7 @@
 use crate::{
-    Error,
-    Result,
-    Status,
-
-    AsNativeStr,
-
-    ffi,
-    check_init,
-    vec::{
-        CVec,
-        FVecMut,
-    },
+    check_init, ffi,
+    vec::{CVec, FVecMut},
+    AsNativeStr, Error, Result, Status,
 };
 
 use std::{
@@ -160,12 +151,8 @@ impl SpecDesc {
      * - `buf_size` Length of the input spectrum frame
      */
     pub fn new(method: impl SpecMethod, buf_size: usize) -> Result<Self> {
-        let specdesc = unsafe {
-            ffi::new_aubio_specdesc(
-                method.as_native_cstr(),
-                buf_size as ffi::uint_t,
-            )
-        };
+        let specdesc =
+            unsafe { ffi::new_aubio_specdesc(method.as_native_cstr(), buf_size as ffi::uint_t) };
 
         check_init(specdesc)?;
 
@@ -188,11 +175,7 @@ impl SpecDesc {
         desc.check_size(1)?;
 
         unsafe {
-            ffi::aubio_specdesc_do(
-                self.specdesc,
-                fftgrain.as_ptr(),
-                desc.as_mut_ptr(),
-            );
+            ffi::aubio_specdesc_do(self.specdesc, fftgrain.as_ptr(), desc.as_mut_ptr());
         }
         Ok(())
     }

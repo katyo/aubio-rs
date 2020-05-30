@@ -1,15 +1,7 @@
 use crate::{
-    Result,
-    Status,
-
-    ffi,
-    check_init,
-    vec::{
-        FVec, FVecMut,
-        CVec, CVecMut,
-        CVecNormMut,
-        CVecPhasMut
-    },
+    check_init, ffi,
+    vec::{CVec, CVecMut, CVecNormMut, CVecPhasMut, FVec, FVecMut},
+    Result, Status,
 };
 
 /**
@@ -30,7 +22,9 @@ pub struct FFT {
 
 impl Drop for FFT {
     fn drop(&mut self) {
-        unsafe { ffi::del_aubio_fft(self.fft); }
+        unsafe {
+            ffi::del_aubio_fft(self.fft);
+        }
     }
 }
 
@@ -73,7 +67,9 @@ impl FFT {
 
         input.check_size(self.get_win())?;
 
-        unsafe { ffi::aubio_fft_do(self.fft, input.as_ptr(), spectrum.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_do(self.fft, input.as_ptr(), spectrum.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -90,7 +86,9 @@ impl FFT {
 
         output.check_size(self.get_win())?;
 
-        unsafe { ffi::aubio_fft_rdo(self.fft, spectrum.as_ptr(), output.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_rdo(self.fft, spectrum.as_ptr(), output.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -108,7 +106,9 @@ impl FFT {
         input.check_size(self.get_win())?;
         compspec.check_size(self.get_win())?;
 
-        unsafe { ffi::aubio_fft_do_complex(self.fft, input.as_ptr(), compspec.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_do_complex(self.fft, input.as_ptr(), compspec.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -126,7 +126,9 @@ impl FFT {
         compspec.check_size(self.get_win())?;
         output.check_size(self.get_win())?;
 
-        unsafe { ffi::aubio_fft_rdo_complex(self.fft, compspec.as_ptr(), output.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_rdo_complex(self.fft, compspec.as_ptr(), output.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -143,7 +145,9 @@ impl FFT {
 
         spectrum.check_size(compspec.size())?;
 
-        unsafe { ffi::aubio_fft_get_spectrum(compspec.as_ptr(), spectrum.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_get_spectrum(compspec.as_ptr(), spectrum.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -160,7 +164,9 @@ impl FFT {
 
         compspec.check_size(spectrum.size())?;
 
-        unsafe { ffi::aubio_fft_get_realimag(spectrum.as_ptr(), compspec.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_get_realimag(spectrum.as_ptr(), compspec.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -177,7 +183,9 @@ impl FFT {
 
         spectrum_phas.check_size(compspec.size())?;
 
-        unsafe { ffi::aubio_fft_get_phas(compspec.as_ptr(), spectrum_phas.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_get_phas(compspec.as_ptr(), spectrum_phas.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -194,7 +202,9 @@ impl FFT {
 
         spectrum_norm.check_size(compspec.size())?;
 
-        unsafe { ffi::aubio_fft_get_norm(compspec.as_ptr(), spectrum_norm.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_get_norm(compspec.as_ptr(), spectrum_norm.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -211,7 +221,9 @@ impl FFT {
 
         compspec.check_size(spectrum.size())?;
 
-        unsafe { ffi::aubio_fft_get_imag(spectrum.as_ptr(), compspec.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_get_imag(spectrum.as_ptr(), compspec.as_mut_ptr());
+        }
         Ok(())
     }
 
@@ -228,7 +240,9 @@ impl FFT {
 
         compspec.check_size(spectrum.size())?;
 
-        unsafe { ffi::aubio_fft_get_real(spectrum.as_ptr(), compspec.as_mut_ptr()); }
+        unsafe {
+            ffi::aubio_fft_get_real(spectrum.as_ptr(), compspec.as_mut_ptr());
+        }
         Ok(())
     }
 }
@@ -243,11 +257,11 @@ mod test {
         const WIN: usize = 512; // window size
 
         let mut in_ = [0f32; WIN]; // input buffer
-        //let mut in_ = farr!(WIN); // input buffer
-        //let mut fftgrain = [0f32; (WIN+1)*2]; // fft norm and phase
+                                   //let mut in_ = farr!(WIN); // input buffer
+                                   //let mut fftgrain = [0f32; (WIN+1)*2]; // fft norm and phase
         let mut fftgrain = carr!(WIN); // fft norm and phase
         let mut out = [0.0; WIN]; // output buffer
-        // create fft object
+                                  // create fft object
         let mut fft = FFT::new(WIN).unwrap();
 
         // fill input with some data

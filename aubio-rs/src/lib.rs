@@ -40,35 +40,35 @@ pub(crate) use aubio_sys as ffi;
 #[cfg(test)]
 use aubio_lib as _;
 
-mod types;
-mod winfunc;
-mod specdesc;
 mod fft;
-mod pvoc;
+mod log;
+mod mfcc;
+mod notes;
 mod onset;
 mod pitch;
-mod tempo;
-mod notes;
-mod mfcc;
+mod pvoc;
 mod resampler;
-mod log;
+mod specdesc;
+mod tempo;
+mod types;
 mod utils;
+mod winfunc;
 
 pub mod vec;
 
-pub use self::types::*;
-pub use self::winfunc::*;
-pub use self::specdesc::*;
 pub use self::fft::*;
-pub use self::pvoc::*;
+pub use self::log::*;
+pub use self::mfcc::*;
+pub use self::notes::*;
 pub use self::onset::*;
 pub use self::pitch::*;
-pub use self::tempo::*;
-pub use self::notes::*;
-pub use self::mfcc::*;
+pub use self::pvoc::*;
 pub use self::resampler::*;
-pub use self::log::*;
+pub use self::specdesc::*;
+pub use self::tempo::*;
+pub use self::types::*;
 pub use self::utils::*;
+pub use self::winfunc::*;
 
 #[macro_export]
 macro_rules! farr {
@@ -80,6 +80,6 @@ macro_rules! farr {
 #[macro_export]
 macro_rules! carr {
     ($len: expr) => {
-        [0f32; $len+2]
+        [0f32; $len + 2]
     };
 }

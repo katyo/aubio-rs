@@ -1,8 +1,8 @@
+use crate::ffi;
 use std::{
     ffi::{c_void, CStr},
     fmt::{Display, Formatter, Result as FmtResult},
 };
-use crate::ffi;
 
 /**
  * Logging level
@@ -92,7 +92,7 @@ pub struct FnLogger<F>(F);
 
 impl<F> FnLogger<F>
 where
-    F: FnMut(LogLevel, &str)
+    F: FnMut(LogLevel, &str),
 {
     pub fn new(func: F) -> Self {
         Self(func)
@@ -101,7 +101,7 @@ where
 
 impl<F> From<F> for FnLogger<F>
 where
-    F: FnMut(LogLevel, &str)
+    F: FnMut(LogLevel, &str),
 {
     fn from(func: F) -> Self {
         Self(func)
@@ -128,7 +128,9 @@ pub struct Log(Box<dyn Logger>);
 
 impl Drop for Log {
     fn drop(&mut self) {
-        unsafe { ffi::aubio_log_reset(); }
+        unsafe {
+            ffi::aubio_log_reset();
+        }
     }
 }
 
@@ -140,10 +142,7 @@ impl Log {
         let logger = Box::new(logger);
 
         unsafe {
-            ffi::aubio_log_set_function(
-                Some(handler::<T>),
-                logger.as_ref() as *const _ as *mut _,
-            );
+            ffi::aubio_log_set_function(Some(handler::<T>), logger.as_ref() as *const _ as *mut _);
         }
 
         Log(logger)
@@ -159,8 +158,8 @@ fn with_global_logger(func: impl FnOnce(&mut Option<Log>)) {
     static ONCE: Once = Once::new();
     static mut LOG: *mut Arc<Mutex<Option<Log>>> = null_mut();
 
-    ONCE.call_once(|| {
-        unsafe { LOG = Box::into_raw(Box::new(Arc::new(Mutex::new(None)))); }
+    ONCE.call_once(|| unsafe {
+        LOG = Box::into_raw(Box::new(Arc::new(Mutex::new(None))));
     });
 
     let log = (unsafe { &*LOG }).clone();
@@ -196,8 +195,8 @@ pub use self::log::LogLogger;
 
 #[cfg(feature = "log")]
 mod log {
-    use log::{log, Level};
     use super::{LogLevel, Logger};
+    use log::{log, Level};
 
     /**
     Logger implementation backed by [log](https://crates.io/crates/log) crate.
@@ -244,11 +243,7 @@ mod log {
     }
 }
 
-extern "C" fn handler<T>(
-        level: ffi::sint_t,
-        message: *const ffi::char_t,
-        data: *mut c_void,
-)
+extern "C" fn handler<T>(level: ffi::sint_t, message: *const ffi::char_t, data: *mut c_void)
 where
     T: Logger,
 {

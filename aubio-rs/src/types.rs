@@ -1,8 +1,8 @@
 use std::{
-    error::{Error as StdError},
+    error::Error as StdError,
     fmt::{Display, Formatter, Result as FmtResult},
-    result::{Result as StdResult},
     os::raw::c_char,
+    result::Result as StdResult,
 };
 
 /**
@@ -70,7 +70,7 @@ pub trait AsNativeStr {
      */
     fn as_rust_str(&self) -> &'static str {
         let nt_str = self.as_native_str();
-        &nt_str[..nt_str.len()-1]
+        &nt_str[..nt_str.len() - 1]
     }
 }
 

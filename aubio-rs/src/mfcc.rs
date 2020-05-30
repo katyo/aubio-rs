@@ -1,13 +1,7 @@
 use crate::{
-    Result,
-    Status,
-
-    ffi,
-    check_init,
-    vec::{
-        CVec,
-        FVecMut,
-    },
+    check_init, ffi,
+    vec::{CVec, FVecMut},
+    Result, Status,
 };
 
 /**
@@ -42,7 +36,12 @@ impl MFCC {
      * - `n_coeffs` Number of desired coefficients
      * - `samplerate` Audio sampling rate
      */
-    pub fn new(buf_size: usize, n_filters: usize, n_coeffs: usize, sample_rate: u32) -> Result<Self> {
+    pub fn new(
+        buf_size: usize,
+        n_filters: usize,
+        n_coeffs: usize,
+        sample_rate: u32,
+    ) -> Result<Self> {
         let mfcc = unsafe {
             ffi::new_aubio_mfcc(
                 buf_size as ffi::uint_t,
@@ -54,7 +53,11 @@ impl MFCC {
 
         check_init(mfcc)?;
 
-        Ok(Self { mfcc, buf_size, n_coeffs })
+        Ok(Self {
+            mfcc,
+            buf_size,
+            n_coeffs,
+        })
     }
 
     /**
@@ -136,7 +139,9 @@ impl MFCC {
      * Set power parameter
      */
     pub fn set_power(&mut self, power: f32) {
-        unsafe { ffi::aubio_mfcc_set_power(self.mfcc, power); }
+        unsafe {
+            ffi::aubio_mfcc_set_power(self.mfcc, power);
+        }
     }
 
     /**
@@ -150,7 +155,9 @@ impl MFCC {
      * Set scaling parameter
      */
     pub fn set_scale(&mut self, scale: f32) {
-        unsafe { ffi::aubio_mfcc_set_scale(self.mfcc, scale); }
+        unsafe {
+            ffi::aubio_mfcc_set_scale(self.mfcc, scale);
+        }
     }
 
     /**
@@ -169,7 +176,9 @@ impl MFCC {
      * The filterbank will be initialized with bands linearly spaced in the mel scale, from `fmin` to `fmax`.
      */
     pub fn set_mel_coeffs(&mut self, fmin: f32, fmax: f32) {
-        unsafe { ffi::aubio_mfcc_set_mel_coeffs(self.mfcc, fmin, fmax); }
+        unsafe {
+            ffi::aubio_mfcc_set_mel_coeffs(self.mfcc, fmin, fmax);
+        }
     }
 
     /**
@@ -181,7 +190,9 @@ impl MFCC {
      * The bank of filters will be initalized to to cover linearly spaced bands in the Htk mel scale, from `fmin` to `fmax`.
      */
     pub fn set_mel_coeffs_htk(&mut self, fmin: f32, fmax: f32) {
-        unsafe { ffi::aubio_mfcc_set_mel_coeffs_htk(self.mfcc, fmin, fmax); }
+        unsafe {
+            ffi::aubio_mfcc_set_mel_coeffs_htk(self.mfcc, fmin, fmax);
+        }
     }
 
     /**
@@ -192,6 +203,8 @@ impl MFCC {
      * This is the default filterbank when mf was created with `n_filters = 40`.
      */
     pub fn set_mel_coeffs_slaney(&mut self) {
-        unsafe { ffi::aubio_mfcc_set_mel_coeffs_slaney(self.mfcc); }
+        unsafe {
+            ffi::aubio_mfcc_set_mel_coeffs_slaney(self.mfcc);
+        }
     }
 }
