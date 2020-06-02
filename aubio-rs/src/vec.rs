@@ -40,7 +40,7 @@ impl<'a> FVec<'a> {
     #[cfg(feature = "check-size")]
     #[inline]
     pub(crate) fn check_size(&self, min_size: usize) -> Status {
-        if self.fvec.length < min_size {
+        if self.fvec.length < min_size as _ {
             Err(Error::MismatchSize)
         } else {
             Ok(())
@@ -88,7 +88,7 @@ impl<'a> FVecMut<'a> {
     #[cfg(feature = "check-size")]
     #[inline]
     pub(crate) fn check_size(&self, min_size: usize) -> Status {
-        if self.fvec.length < min_size {
+        if self.fvec.length < min_size as _ {
             Err(Error::MismatchSize)
         } else {
             Ok(())
@@ -163,7 +163,7 @@ impl<'a> CVec<'a> {
     #[cfg(feature = "check-size")]
     #[inline]
     pub(crate) fn check_size(&self, min_size: usize) -> Status {
-        if self.cvec.length < min_size {
+        if (self.cvec.length - 1) * 2 < min_size as _ {
             Err(Error::MismatchSize)
         } else {
             Ok(())
@@ -247,7 +247,7 @@ impl<'a> CVecMut<'a> {
     #[cfg(feature = "check-size")]
     #[inline]
     pub(crate) fn check_size(&self, min_size: usize) -> Status {
-        if self.cvec.length < min_size {
+        if (self.cvec.length - 1) * 2 < min_size as _ {
             Err(Error::MismatchSize)
         } else {
             Ok(())
