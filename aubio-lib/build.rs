@@ -290,7 +290,7 @@ mod utils {
 
             for task in &["configure", "build", "install"] {
                 run_command(
-                    Command::new("python")
+                    Command::new("python2")
                         .envs(env_vars.clone())
                         .current_dir(src_dir)
                         .arg("waf")
