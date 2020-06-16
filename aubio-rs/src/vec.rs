@@ -347,7 +347,7 @@ impl<'a, X> FMat<'a, X> {
         self.fmat.height as usize
     }
 
-    /// Read sample value in a buffer 
+    /// Read sample value in a buffer
     pub fn get_sample(&self, channel: usize, position: usize) -> Result<f32> {
         if channel >= self.height() || position >= self.length() {
             return Err(Error::InvalidArg);
@@ -380,7 +380,13 @@ impl<'a> FMat<'a, ()> {
      *
      * The matrix is non-owned; useful to avoid double-frees for `FilterBank`,
      * for instance.
+     *
+     * # Safety
+     *
+     * - The `ptr` must not be `null`.
+     * - The `ptr` should points to already initialized matrix data.
      */
+    #[allow(clippy::missing_safety_doc)] // TODO: Remove after closing https://github.com/rust-lang/rust-clippy/issues/5593
     pub unsafe fn from_raw_ptr(ptr: *const ffi::fmat_t) -> Self {
         FMat {
             fmat: *ptr,
@@ -391,7 +397,6 @@ impl<'a> FMat<'a, ()> {
 }
 
 pub type FMatVecs = Vec<*const f32>;
-
 
 impl<'a, T: AsRef<[&'a [f32]]>> From<T> for FMat<'a, FMatVecs> {
     /**
@@ -451,7 +456,7 @@ mod test {
         let fmat: FMat<_> = x.into();
         assert_eq!(2, fmat.length());
         assert_eq!(3, fmat.height());
-        
+
         assert_eq!(1., fmat.get_sample(0, 0).unwrap());
         assert_eq!(2., fmat.get_sample(0, 1).unwrap());
         assert_eq!(4., fmat.get_sample(1, 0).unwrap());
@@ -470,12 +475,11 @@ mod test {
         assert_eq!(matrix, vec![&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]]);
     }
 
-
     #[test]
     fn test_get_sample_fmat_wrong_size() {
         let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
         let fmat: FMat<_> = x.into();
-        
+
         assert_eq!(Err(Error::InvalidArg), fmat.get_sample(70, 80));
     }
 
