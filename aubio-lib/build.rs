@@ -1,7 +1,12 @@
 #[cfg(not(feature = "rustdoc"))]
 mod source {
-    pub const URL: &str = "https://github.com/katyo/{package}-rs/releases/download/{package}-{version}/{package}-{version}.tar.gz";
-    pub const VERSION: &str = "0.5.0-git1f23a23d";
+    pub const URL: &str = "https://github.com/aubio/aubio/archive/{version}.tar.gz";
+    pub const VERSION: &str = "0.4.9";
+
+    pub mod waf {
+        pub const URL: &str = "https://github.com/kukuen/{package}/releases/download/{version}/waf-light-{version}.tar.gz";
+        pub const VERSION: &str = "2.0.20-msvc-fix";
+    }
 
     #[cfg(feature = "with-fftw3")]
     pub mod fftw3 {
@@ -15,10 +20,16 @@ fn main() {
     {
         use std::{env, path::Path};
 
-        let src = utils::Source::new(
+        let aubio_src = utils::Source::new(
             "aubio",
             env::var("AUBIO_VERSION").unwrap_or_else(|_| source::VERSION.into()),
             env::var("AUBIO_URL").unwrap_or_else(|_| source::URL.into()),
+        );
+
+        let waf_src = utils::Source::new(
+            "waf",
+            env::var("WAF_VERSION").unwrap_or_else(|_| source::waf::VERSION.into()),
+            env::var("WAF_URL").unwrap_or_else(|_| source::waf::URL.into()),
         );
 
         let out_dir = env::var("OUT_DIR").expect("The OUT_DIR is set by cargo.");
@@ -44,9 +55,9 @@ fn main() {
             bld_dir.join("lib").join("pkgconfig").to_owned()
         };
 
-        let src_dir = out_dir.join("source").join(&src.version);
+        let src_dir = out_dir.join("source").join(&aubio_src.version);
 
-        let bld_dir = out_dir.join("build").join(&src.version);
+        let bld_dir = out_dir.join("build").join(&aubio_src.version);
 
         let config = utils::Config {
             #[cfg(feature = "with-fftw3")]
@@ -55,10 +66,12 @@ fn main() {
             ..utils::Config::default()
         };
 
-        utils::fetch_source(&src, &src_dir);
+        if !src_dir.is_dir() {
+            utils::fetch_source("aubio", &aubio_src, &src_dir);
+            utils::fetch_source("waf", &waf_src, &src_dir);
+        }
 
         utils::fix_source(&src_dir);
-
         utils::compile_library(&src_dir, &bld_dir, &config);
     }
 }
@@ -101,20 +114,24 @@ mod utils {
         }
     }
 
-    pub fn fetch_source(src: &Source, out_dir: &Path) {
+    pub fn fetch_source(package: &str, src: &Source, out_dir: &Path) {
         use fetch_unroll::Fetch;
 
-        if !out_dir.is_dir() {
-            let src_url = src.url();
+        let src_url = src.url();
 
-            eprintln!("Fetch aubio from {} to {}", src_url, out_dir.display());
+        eprintln!(
+            "Fetch {} from {} to {}",
+            package,
+            src_url,
+            out_dir.display()
+        );
 
-            Fetch::from(src_url)
-                .unroll()
-                .strip_components(1)
-                .to(out_dir)
-                .expect("Aubio sources should be fetched.");
-        }
+        Fetch::from(src_url)
+            .unroll()
+            .cleanup_dest_dir(false)
+            .strip_components(1)
+            .to(out_dir)
+            .unwrap_or_else(|_| panic!("{} sources should be fetched.", package));
     }
 
     pub fn fix_source(src_dir: &Path) {
@@ -293,7 +310,7 @@ mod utils {
                     Command::new("python")
                         .envs(env_vars.clone())
                         .current_dir(src_dir)
-                        .arg("waf")
+                        .arg("waf-light")
                         .args(&wafargs)
                         .arg(task),
                 );
