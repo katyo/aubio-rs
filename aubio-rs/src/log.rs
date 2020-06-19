@@ -80,7 +80,7 @@ pub trait Logger {
 Closure logger wrapper
 
 ```
-# use aubio_lib as _;
+# extern crate aubio_lib;
 use aubio_rs::{Log, FnLogger};
 
 Log::set(FnLogger::from(|level, message: &str| {
@@ -202,7 +202,7 @@ mod log {
     Logger implementation backed by [log](https://crates.io/crates/log) crate.
 
     ```
-    # use aubio_lib as _;
+    # extern crate aubio_lib;
     use aubio_rs::{Log, LogLevel, LogLogger};
 
     Log::set(LogLogger::default());

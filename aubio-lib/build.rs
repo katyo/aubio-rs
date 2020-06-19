@@ -164,6 +164,24 @@ mod utils {
                     .unwrap();
             }
         }
+
+        {
+            // disable gensyms
+            let script = src_dir.join("wscript");
+            let mut source = String::new();
+            File::open(&script)
+                .unwrap()
+                .read_to_string(&mut source)
+                .unwrap();
+            File::create(&script)
+                .unwrap()
+                .write_all(
+                    source
+                        .replace("    ctx.load('waf_gensyms', tooldir='.')", "")
+                        .as_bytes(),
+                )
+                .unwrap();
+        }
     }
 
     pub fn toolchain_env() -> Vec<(&'static str, String)> {
@@ -207,7 +225,7 @@ mod utils {
         }
     }
 
-    pub fn run_command(cmd: &mut Command) {
+    pub fn run_command(cmd: &mut Command) -> String {
         use std::{process::Output, str::from_utf8};
 
         eprintln!("Run command: {:?}", cmd);
@@ -230,6 +248,10 @@ mod utils {
                         from_utf8(stderr.as_slice()).unwrap_or("<invalud UTF8 string>")
                     );
                 }
+
+                String::from_utf8(stdout).unwrap_or_else(|err| {
+                    panic!("Invalid unicode output of command '{:?}' ({:?})", cmd, err)
+                })
             }
         }
     }
@@ -246,10 +268,42 @@ mod utils {
             .is_file()
         {
             let profile = env::var("PROFILE").expect("The PROFILE is set by cargo.");
-
+            let target_arch = env::var("CARGO_CFG_TARGET_ARCH")
+                .expect("The CARGO_CFG_TARGET_ARCH is set by cargo.");
+            let target_os =
+                env::var("CARGO_CFG_TARGET_OS").expect("The CARGO_CFG_TARGET_OS is set by cargo.");
+            let target_env = env::var("CARGO_CFG_TARGET_ENV")
+                .expect("The CARGO_CFG_TARGET_ENV is set by cargo.");
             let num_jobs = env::var("NUM_JOBS").expect("The NUM_JOBS is set by cargo.");
 
             let mut wafargs = Vec::<String>::new();
+
+            if target_os == "windows" {
+                wafargs.push(format!(
+                    "--check-c-compiler={}",
+                    if target_env == "msvc" { "msvc" } else { "gcc" }
+                ));
+            }
+
+            if let Some(target_platform) = match target_os.as_ref() {
+                // WAF failed to find gcc when target platform is set
+                "windows" => Some(if target_arch.ends_with("64") {
+                    "win64"
+                } else {
+                    "win32"
+                }),
+                "macos" => Some("darwin"),
+                "ios" => Some(
+                    if target_arch.starts_with("arm") || target_arch.starts_with("aarch") {
+                        "ios"
+                    } else {
+                        "iosimulator"
+                    },
+                ),
+                os => Some(os),
+            } {
+                wafargs.push(format!("--with-target-platform={}", target_platform));
+            }
 
             wafargs.push("--verbose".into());
 
@@ -305,9 +359,11 @@ mod utils {
                 env_vars.push(("PKG_CONFIG_PATH", pkg_config_path.join(":")));
             }
 
+            let python_path = find_python().expect("Cannot find appropriate python interpreter");
+
             for task in &["configure", "build", "install"] {
-                run_command(
-                    Command::new("python")
+                let _ = run_command(
+                    Command::new(&python_path)
                         .envs(env_vars.clone())
                         .current_dir(src_dir)
                         .arg("waf-light")
@@ -329,6 +385,22 @@ mod utils {
             println!("cargo:rustc-link-lib=framework=Accelerate");
             println!("cargo:rustc-link-lib=framework=CoreFoundation");
         }
+    }
+
+    fn find_python() -> Result<PathBuf, String> {
+        use which::which;
+
+        which("python3")
+            .or_else(|_| which("python"))
+            .map_err(|err| err.to_string())
+            .and_then(|path| {
+                let out = run_command(Command::new(&path).arg("-V"));
+                if out.starts_with("Python 3.") {
+                    Ok(path)
+                } else {
+                    Err("Python 3.x required".into())
+                }
+            })
     }
 
     #[cfg(feature = "with-fftw3")]

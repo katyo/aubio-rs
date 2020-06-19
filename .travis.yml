@@ -6,9 +6,12 @@ rust:
 os:
 - linux
 - osx
-#- windows
+- windows
 cache:
   cargo: true
+  directories:
+  - $HOME/AppData/Local/Temp/chocolatey
+  - /C/python3
 addons:
   apt:
     packages:
@@ -18,10 +21,9 @@ before_install:
     rustup component add rustfmt clippy
     case $TRAVIS_OS_NAME in
       windows)
-        export PYTHONIOENCODING=utf-8
-        export PYTHONLEGACYWINDOWSSTDIO=1
-        export CC_NAME=gcc
-        export CC=gcc
+        choco install -y python3 --params "/InstallDir:C:\python3"
+        export PATH=/C/python3:$PATH
+        python -V
         ;;
       osx)
         brew unlink python@2
