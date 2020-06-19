@@ -164,6 +164,24 @@ mod utils {
                     .unwrap();
             }
         }
+
+        {
+            // disable gensyms
+            let script = src_dir.join("wscript");
+            let mut source = String::new();
+            File::open(&script)
+                .unwrap()
+                .read_to_string(&mut source)
+                .unwrap();
+            File::create(&script)
+                .unwrap()
+                .write_all(
+                    source
+                        .replace("    ctx.load('waf_gensyms', tooldir='.')", "")
+                        .as_bytes(),
+                )
+                .unwrap();
+        }
     }
 
     pub fn toolchain_env() -> Vec<(&'static str, String)> {
