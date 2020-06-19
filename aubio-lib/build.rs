@@ -250,10 +250,42 @@ mod utils {
             .is_file()
         {
             let profile = env::var("PROFILE").expect("The PROFILE is set by cargo.");
-
+            let target_arch = env::var("CARGO_CFG_TARGET_ARCH")
+                .expect("The CARGO_CFG_TARGET_ARCH is set by cargo.");
+            let target_os =
+                env::var("CARGO_CFG_TARGET_OS").expect("The CARGO_CFG_TARGET_OS is set by cargo.");
+            let target_env = env::var("CARGO_CFG_TARGET_ENV")
+                .expect("The CARGO_CFG_TARGET_ENV is set by cargo.");
             let num_jobs = env::var("NUM_JOBS").expect("The NUM_JOBS is set by cargo.");
 
             let mut wafargs = Vec::<String>::new();
+
+            if target_os == "windows" {
+                wafargs.push(format!(
+                    "--check-c-compiler={}",
+                    if target_env == "msvc" { "msvc" } else { "gcc" }
+                ));
+            }
+
+            if let Some(target_platform) = match target_os.as_ref() {
+                // WAF failed to find gcc when target platform is set
+                "windows" => Some(if target_arch.ends_with("64") {
+                    "win64"
+                } else {
+                    "win32"
+                }),
+                "macos" => Some("darwin"),
+                "ios" => Some(
+                    if target_arch.starts_with("arm") || target_arch.starts_with("aarch") {
+                        "ios"
+                    } else {
+                        "iosimulator"
+                    },
+                ),
+                os => Some(os),
+            } {
+                wafargs.push(format!("--with-target-platform={}", target_platform));
+            }
 
             wafargs.push("--verbose".into());
 
