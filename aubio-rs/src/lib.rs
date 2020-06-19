@@ -53,10 +53,12 @@ mod tempo;
 mod types;
 mod utils;
 mod winfunc;
+mod filterbank;
 
 pub mod vec;
 
 pub use self::fft::*;
+pub use self::filterbank::*;
 pub use self::log::*;
 pub use self::mfcc::*;
 pub use self::notes::*;
