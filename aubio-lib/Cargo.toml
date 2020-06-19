@@ -19,6 +19,9 @@ path = "../aubio-sys"
 [build-dependencies.fetch_unroll]
 version = "^0.2"
 
+[build-dependencies.which]
+version = "^4"
+
 [build-dependencies.cmake]
 version = "^0.1"
 optional = true

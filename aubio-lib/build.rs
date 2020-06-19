@@ -207,7 +207,7 @@ mod utils {
         }
     }
 
-    pub fn run_command(cmd: &mut Command) {
+    pub fn run_command(cmd: &mut Command) -> String {
         use std::{process::Output, str::from_utf8};
 
         eprintln!("Run command: {:?}", cmd);
@@ -230,6 +230,10 @@ mod utils {
                         from_utf8(stderr.as_slice()).unwrap_or("<invalud UTF8 string>")
                     );
                 }
+
+                String::from_utf8(stdout).unwrap_or_else(|err| {
+                    panic!("Invalid unicode output of command '{:?}' ({:?})", cmd, err)
+                })
             }
         }
     }
@@ -305,9 +309,11 @@ mod utils {
                 env_vars.push(("PKG_CONFIG_PATH", pkg_config_path.join(":")));
             }
 
+            let python_path = find_python().expect("Cannot find appropriate python interpreter");
+
             for task in &["configure", "build", "install"] {
-                run_command(
-                    Command::new("python")
+                let _ = run_command(
+                    Command::new(&python_path)
                         .envs(env_vars.clone())
                         .current_dir(src_dir)
                         .arg("waf-light")
@@ -329,6 +335,22 @@ mod utils {
             println!("cargo:rustc-link-lib=framework=Accelerate");
             println!("cargo:rustc-link-lib=framework=CoreFoundation");
         }
+    }
+
+    fn find_python() -> Result<PathBuf, String> {
+        use which::which;
+
+        which("python3")
+            .or_else(|_| which("python"))
+            .map_err(|err| err.to_string())
+            .and_then(|path| {
+                let out = run_command(Command::new(&path).arg("-V"));
+                if out.starts_with("Python 3.") {
+                    Ok(path)
+                } else {
+                    Err("Python 3.x required".into())
+                }
+            })
     }
 
     #[cfg(feature = "with-fftw3")]
