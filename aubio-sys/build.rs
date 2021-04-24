@@ -12,8 +12,7 @@ fn main() {
     let build = env::var("CARGO_FEATURE_BUILD").is_ok();
     if build {
         println!("cargo:rustc-link-lib=aubio");
-    } else {
-        if let Ok(paths) = pkg_config::Config::new()
+    } else if let Ok(paths) = pkg_config::Config::new()
             .atleast_version("0.4.9")
             .probe("aubio")
         {
