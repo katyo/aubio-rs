@@ -9,6 +9,7 @@ license = "GPL-3.0"
 readme = "README.md"
 repository = "https://github.com/katyo/aubio-rs"
 edition = "2018"
+links = "aubio"
 
 [badges]
 
