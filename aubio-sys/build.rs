@@ -13,12 +13,11 @@ fn main() {
     if build {
         println!("cargo:rustc-link-lib=aubio");
     } else if let Ok(paths) = pkg_config::Config::new()
-            .atleast_version("0.4.9")
-            .probe("aubio")
-        {
-            for path in paths.include_paths {
-                println!("{}", path.display());
-            }
+        .atleast_version("0.4.9")
+        .probe("aubio")
+    {
+        for path in paths.include_paths {
+            println!("{}", path.display());
         }
     }
 
