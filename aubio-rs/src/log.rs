@@ -13,27 +13,27 @@ pub enum LogLevel {
     /**
      * Critical errors
      */
-    Error = ffi::aubio_log_level_AUBIO_LOG_ERR,
+    Error = ffi::aubio_log_level_AUBIO_LOG_ERR as _,
 
     /**
      * Infos
      */
-    Info = ffi::aubio_log_level_AUBIO_LOG_INF,
+    Info = ffi::aubio_log_level_AUBIO_LOG_INF as _,
 
     /**
      * General mesages
      */
-    Message = ffi::aubio_log_level_AUBIO_LOG_MSG,
+    Message = ffi::aubio_log_level_AUBIO_LOG_MSG as _,
 
     /**
      * Debug messages
      */
-    Debug = ffi::aubio_log_level_AUBIO_LOG_DBG,
+    Debug = ffi::aubio_log_level_AUBIO_LOG_DBG as _,
 
     /**
      * Warnings
      */
-    Warning = ffi::aubio_log_level_AUBIO_LOG_WRN,
+    Warning = ffi::aubio_log_level_AUBIO_LOG_WRN as _,
 }
 
 impl LogLevel {
@@ -80,7 +80,6 @@ pub trait Logger {
 Closure logger wrapper
 
 ```
-# extern crate aubio_lib;
 use aubio_rs::{Log, FnLogger};
 
 Log::set(FnLogger::from(|level, message: &str| {
@@ -202,7 +201,6 @@ mod log {
     Logger implementation backed by [log](https://crates.io/crates/log) crate.
 
     ```
-    # extern crate aubio_lib;
     use aubio_rs::{Log, LogLevel, LogLogger};
 
     Log::set(LogLogger::default());
