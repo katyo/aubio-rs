@@ -1,9 +1,7 @@
 use crate::{
-    check_init,
-    ffi,
-    vec::{FVecMut, CVec, FMat, FMatVecs},
-    Result,
-    Status,
+    check_init, ffi,
+    vec::{CVec, FMat, FMatVecs, FVecMut},
+    Result, Status,
 };
 
 /**
@@ -35,15 +33,18 @@ impl FilterBank {
      * Allocates an empty matrix of length win_s / 2 + 1 and height n_filters
      */
     pub fn new(n_filters: usize, win_s: usize) -> Result<Self> {
-        let filterbank = unsafe {
-            ffi::new_aubio_filterbank(n_filters as ffi::uint_t, win_s as ffi::uint_t)
-        };
+        let filterbank =
+            unsafe { ffi::new_aubio_filterbank(n_filters as ffi::uint_t, win_s as ffi::uint_t) };
 
         check_init(filterbank)?;
 
         #[cfg(feature = "check-size")]
         {
-            Ok(Self { filterbank, n_filters, win_s })
+            Ok(Self {
+                filterbank,
+                n_filters,
+                win_s,
+            })
         }
         #[cfg(not(feature = "check-size"))]
         {
@@ -58,11 +59,13 @@ impl FilterBank {
                 panic!("Invalid FilterBank coeff size");
             }
         }
-        unsafe { ffi::aubio_filterbank_set_coeffs(self.filterbank, filters.as_ptr()); }
+        unsafe {
+            ffi::aubio_filterbank_set_coeffs(self.filterbank, filters.as_ptr());
+        }
     }
 
     pub fn get_coeffs(&mut self) -> FMat<()> {
-        unsafe { FMat::from_raw_ptr(ffi::aubio_filterbank_get_coeffs(self.filterbank) )}
+        unsafe { FMat::from_raw_ptr(ffi::aubio_filterbank_get_coeffs(self.filterbank)) }
     }
 
     pub fn do_<'i, 'o, I, O>(&mut self, input: I, output: O) -> Status
@@ -78,7 +81,7 @@ impl FilterBank {
                 panic!("Invalid output or input size for FilterBank");
             }
         }
-        unsafe { ffi::aubio_filterbank_do (self.filterbank, input.as_ptr(), output.as_mut_ptr()) };
+        unsafe { ffi::aubio_filterbank_do(self.filterbank, input.as_ptr(), output.as_mut_ptr()) };
         Ok(())
     }
 }
@@ -108,7 +111,7 @@ mod test {
         assert_eq!(coeffs.get_vec(), vec![&[1.0, 1.0, 1.0], &[2.0, 2.0, 2.0]]);
     }
 
-    #[cfg(feature="check-size")]
+    #[cfg(feature = "check-size")]
     #[should_panic]
     #[test]
     fn test_wrong_height_set_coeffs() {
@@ -118,7 +121,7 @@ mod test {
         filter_bank.set_coeffs(filters.into());
     }
 
-    #[cfg(feature="check-size")]
+    #[cfg(feature = "check-size")]
     #[should_panic]
     #[test]
     fn test_wrong_length_set_coeffs() {
@@ -137,12 +140,14 @@ mod test {
         let mut output: Vec<f32> = vec![0.; 2];
 
         filter_bank.set_coeffs(filters.into());
-        filter_bank.do_(input.as_slice().as_ref(), output.as_mut_slice().as_mut()).unwrap();
+        filter_bank
+            .do_(input.as_slice().as_ref(), output.as_mut_slice().as_mut())
+            .unwrap();
 
         assert_eq!(vec![6.0, 12.0], output);
     }
 
-    #[cfg(feature="check-size")]
+    #[cfg(feature = "check-size")]
     #[should_panic]
     #[test]
     fn test_filterbank_do_wrong_dimensions_input() {
@@ -150,10 +155,12 @@ mod test {
         let input: Vec<f32> = vec![2., 2., 2., 2., 2., 100., 100., 100., 100., 100.];
         let mut output: Vec<f32> = vec![0.; 2];
 
-        filter_bank.do_(input.as_slice().as_ref(), output.as_mut_slice().as_mut()).unwrap();
+        filter_bank
+            .do_(input.as_slice().as_ref(), output.as_mut_slice().as_mut())
+            .unwrap();
     }
 
-    #[cfg(feature="check-size")]
+    #[cfg(feature = "check-size")]
     #[should_panic]
     #[test]
     fn test_filterbank_do_wrong_dimensions_output() {
@@ -161,6 +168,8 @@ mod test {
         let input: Vec<f32> = vec![2., 2., 2., 2.0, 100., 100., 100., 100.];
         let mut output: Vec<f32> = vec![0.; 1];
 
-        filter_bank.do_(input.as_slice().as_ref(), output.as_mut_slice().as_mut()).unwrap();
+        filter_bank
+            .do_(input.as_slice().as_ref(), output.as_mut_slice().as_mut())
+            .unwrap();
     }
 }

@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> {}, ... }:
 with pkgs;
-let stdenv = clangStdenv;
+let stdenv = llvmPackages_11.stdenv; #clangStdenv;
 in stdenv.mkDerivation {
   name = "aubio";
 

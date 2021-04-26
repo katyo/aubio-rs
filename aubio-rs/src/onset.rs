@@ -556,7 +556,10 @@ mod test {
         // pv creation might fail
         assert_eq!(
             Onset::new(Default::default(), 5, 2, SAMPLERATE).is_ok(),
-            cfg!(any(feature = "with-fftw3", feature = "with-fftw3f"))
+            cfg!(any(
+                feature = "fftw3",
+                all(feature = "pkg-config", not(feature = "builtin"))
+            ))
         );
     }
 }

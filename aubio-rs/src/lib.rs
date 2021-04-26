@@ -32,15 +32,21 @@
  *
  * The following features can be used to customize configuration:
  *
- * - _generate-bindings_ which runs __bindgen__ to generate bindings (_useful for unsupported archs_)
+ * - __bindgen__ Force generate bindings itself instead of use pre-generated (_useful for unsupported archs_)
+ * - __builtin__ Force compile builtin _aubio_ C-library
+ * - __pkg-config__ Use _pkg-config_ to find installed libraries
+ * - __shared__ Build shared _aubio_ C-library
+ * - __static__ Build static _aubio_ C-library
+ * - __fftw3__ Enable using _fftw3_ library
+ *
+ * When __pkg-config__ feature is used the installed __aubio__ library will be used if found.
+ * To force build and link builtin version you can use __builtin__ feature.
  */
 
 pub(crate) use aubio_sys as ffi;
 
-#[cfg(test)]
-use aubio_lib as _;
-
 mod fft;
+mod filterbank;
 mod log;
 mod mfcc;
 mod notes;
@@ -53,7 +59,6 @@ mod tempo;
 mod types;
 mod utils;
 mod winfunc;
-mod filterbank;
 
 pub mod vec;
 

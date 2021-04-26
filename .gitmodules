@@ -1,0 +1,3 @@
+[submodule "aubio-sys/aubio"]
+	path = aubio-sys/aubio
+	url = ../../aubio/aubio
