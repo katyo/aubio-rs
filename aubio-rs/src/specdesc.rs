@@ -1,7 +1,7 @@
 use crate::{
     check_init, ffi,
     vec::{CVec, FVecMut},
-    AsNativeStr, Error, Result, Status,
+    AsNativeStr, Error, Result, Smpl, Status,
 };
 
 use std::{
@@ -185,11 +185,11 @@ impl SpecDesc {
      *
      * Generic function to compute spectral description.
      */
-    pub fn do_result<'i, I>(&mut self, fftgrain: I) -> Result<f32>
+    pub fn do_result<'i, I>(&mut self, fftgrain: I) -> Result<Smpl>
     where
         I: Into<CVec<'i>>,
     {
-        let mut desc = [0f32; 1];
+        let mut desc = [0.; 1];
         self.do_(fftgrain, &mut desc)?;
         Ok(desc[0])
     }

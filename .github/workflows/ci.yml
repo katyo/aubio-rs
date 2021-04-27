@@ -356,7 +356,8 @@ jobs:
         with:
           name: bindings
           path: |
-            aubio-sys/${{ env.AUBIO_SYS_BINDINGS_FILE }}
+            aubio-sys/${{ env.AUBIO_SYS_BINDINGS_FILE_SINGLE }}
+            aubio-sys/${{ env.AUBIO_SYS_BINDINGS_FILE_DOUBLE }}
             LICENSE
             README.md
       - name: Build

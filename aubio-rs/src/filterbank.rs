@@ -89,6 +89,7 @@ impl FilterBank {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::Smpl;
 
     #[test]
     fn test_new_filterbank() {
@@ -103,7 +104,7 @@ mod test {
     #[test]
     fn test_set_coeffs() {
         let mut filter_bank = FilterBank::new(2, 4).unwrap();
-        let filters: Vec<&[f32]> = vec![&[1.0, 1.0, 1.0], &[2.0, 2.0, 2.0]];
+        let filters: Vec<&[Smpl]> = vec![&[1.0, 1.0, 1.0], &[2.0, 2.0, 2.0]];
 
         filter_bank.set_coeffs(filters.into());
         let coeffs = filter_bank.get_coeffs();
@@ -116,7 +117,7 @@ mod test {
     #[test]
     fn test_wrong_height_set_coeffs() {
         let mut filter_bank = FilterBank::new(2, 4).unwrap();
-        let filters: Vec<&[f32]> = vec![&[1.0, 1.0, 1.0], &[2.0, 2.0, 2.0], &[0.0, 0.0, 0.0]];
+        let filters: Vec<&[Smpl]> = vec![&[1.0, 1.0, 1.0], &[2.0, 2.0, 2.0], &[0.0, 0.0, 0.0]];
 
         filter_bank.set_coeffs(filters.into());
     }
@@ -126,7 +127,7 @@ mod test {
     #[test]
     fn test_wrong_length_set_coeffs() {
         let mut filter_bank = FilterBank::new(2, 4).unwrap();
-        let filters: Vec<&[f32]> = vec![&[1.0], &[2.0], &[0.0], &[0.0]];
+        let filters: Vec<&[Smpl]> = vec![&[1.0], &[2.0], &[0.0], &[0.0]];
 
         filter_bank.set_coeffs(filters.into());
     }
@@ -134,10 +135,10 @@ mod test {
     #[test]
     fn test_filterbank_do() {
         let mut filter_bank = FilterBank::new(2, 4).unwrap();
-        let filters: Vec<&[f32]> = vec![&[1.0, 1.0, 1.0], &[2.0, 2.0, 2.0]];
+        let filters: Vec<&[Smpl]> = vec![&[1.0, 1.0, 1.0], &[2.0, 2.0, 2.0]];
         // norm is 2 2 2, phas is 100 100 100
-        let input: Vec<f32> = vec![2., 2., 2., 100., 100., 100.];
-        let mut output: Vec<f32> = vec![0.; 2];
+        let input: Vec<Smpl> = vec![2., 2., 2., 100., 100., 100.];
+        let mut output: Vec<Smpl> = vec![0.; 2];
 
         filter_bank.set_coeffs(filters.into());
         filter_bank
@@ -152,8 +153,8 @@ mod test {
     #[test]
     fn test_filterbank_do_wrong_dimensions_input() {
         let mut filter_bank = FilterBank::new(2, 4).unwrap();
-        let input: Vec<f32> = vec![2., 2., 2., 2., 2., 100., 100., 100., 100., 100.];
-        let mut output: Vec<f32> = vec![0.; 2];
+        let input: Vec<Smpl> = vec![2., 2., 2., 2., 2., 100., 100., 100., 100., 100.];
+        let mut output: Vec<Smpl> = vec![0.; 2];
 
         filter_bank
             .do_(input.as_slice().as_ref(), output.as_mut_slice().as_mut())
@@ -165,8 +166,8 @@ mod test {
     #[test]
     fn test_filterbank_do_wrong_dimensions_output() {
         let mut filter_bank = FilterBank::new(2, 4).unwrap();
-        let input: Vec<f32> = vec![2., 2., 2., 2.0, 100., 100., 100., 100.];
-        let mut output: Vec<f32> = vec![0.; 1];
+        let input: Vec<Smpl> = vec![2., 2., 2., 2.0, 100., 100., 100., 100.];
+        let mut output: Vec<Smpl> = vec![0.; 1];
 
         filter_bank
             .do_(input.as_slice().as_ref(), output.as_mut_slice().as_mut())

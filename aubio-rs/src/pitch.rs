@@ -1,7 +1,7 @@
 use crate::{
     check_init, ffi,
     vec::{FVec, FVecMut},
-    AsNativeStr, Error, Result, Status,
+    AsNativeStr, Error, Result, Smpl, Status,
 };
 
 use std::{
@@ -249,7 +249,7 @@ impl Pitch {
     /**
      * Change yin or yinfft tolerance threshold
      */
-    pub fn with_tolerance(mut self, tolerance: f32) -> Self {
+    pub fn with_tolerance(mut self, tolerance: Smpl) -> Self {
         self.set_tolerance(tolerance);
         self
     }
@@ -257,7 +257,7 @@ impl Pitch {
     /**
      * Set the silence threshold of the pitch detection object
      */
-    pub fn with_silence(mut self, silence: f32) -> Self {
+    pub fn with_silence(mut self, silence: Smpl) -> Self {
         self.set_silence(silence);
         self
     }
@@ -305,11 +305,11 @@ impl Pitch {
      *
      * - `input` Input signal of size `hop_size`
      */
-    pub fn do_result<'i, I>(&mut self, input: I) -> Result<f32>
+    pub fn do_result<'i, I>(&mut self, input: I) -> Result<Smpl>
     where
         I: Into<FVec<'i>>,
     {
-        let mut output = [0f32; 1];
+        let mut output = [0.; 1];
         self.do_(input, &mut output)?;
         Ok(output[0])
     }
@@ -317,7 +317,7 @@ impl Pitch {
     /**
      * Change yin or yinfft tolerance threshold
      */
-    pub fn set_tolerance(&mut self, tolerance: f32) {
+    pub fn set_tolerance(&mut self, tolerance: Smpl) {
         unsafe {
             ffi::aubio_pitch_set_tolerance(self.pitch, tolerance);
         }
@@ -326,14 +326,14 @@ impl Pitch {
     /**
      * Get yin or yinfft tolerance threshold
      */
-    pub fn get_tolerance(&self) -> f32 {
+    pub fn get_tolerance(&self) -> Smpl {
         unsafe { ffi::aubio_pitch_get_tolerance(self.pitch) }
     }
 
     /**
      * Set the silence threshold of the pitch detection object
      */
-    pub fn set_silence(&mut self, silence: f32) {
+    pub fn set_silence(&mut self, silence: Smpl) {
         unsafe {
             ffi::aubio_pitch_set_silence(self.pitch, silence);
         }
@@ -342,7 +342,7 @@ impl Pitch {
     /**
      * Get the silence threshold of the pitch detection object
      */
-    pub fn get_silence(&self) -> f32 {
+    pub fn get_silence(&self) -> Smpl {
         unsafe { ffi::aubio_pitch_get_silence(self.pitch) }
     }
 
@@ -358,7 +358,7 @@ impl Pitch {
     /**
      * Get the current confidence of the pitch algorithm
      */
-    pub fn get_confidence(&self) -> f32 {
+    pub fn get_confidence(&self) -> Smpl {
         unsafe { ffi::aubio_pitch_get_confidence(self.pitch) }
     }
 }

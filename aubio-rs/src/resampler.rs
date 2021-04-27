@@ -1,7 +1,7 @@
 use crate::{
     check_init, ffi,
     vec::{FVec, FVecMut},
-    Error, Result, Status,
+    Error, Result, Smpl, Status,
 };
 
 use std::{
@@ -70,7 +70,7 @@ impl FromStr for ResampleMode {
  */
 pub struct Resampler {
     resampler: *mut ffi::aubio_resampler_t,
-    ratio: f32,
+    ratio: Smpl,
 }
 
 impl Drop for Resampler {
@@ -86,7 +86,7 @@ impl Resampler {
      * - `ratio` The `output_sample_rate` / `input_sample_rate`
      * - `type` Resampling method
      */
-    pub fn new(ratio: f32, mode: ResampleMode) -> Result<Self> {
+    pub fn new(ratio: Smpl, mode: ResampleMode) -> Result<Self> {
         let resampler = unsafe { ffi::new_aubio_resampler(ratio, mode as ffi::uint_t) };
 
         check_init(resampler)?;
@@ -97,7 +97,7 @@ impl Resampler {
     /**
      * Get ratio
      */
-    pub fn get_ratio(&self) -> f32 {
+    pub fn get_ratio(&self) -> Smpl {
         self.ratio
     }
 
@@ -115,7 +115,7 @@ impl Resampler {
         let input = input.into();
         let mut output = output.into();
 
-        output.check_size((input.size() as f32 * self.ratio).floor() as usize)?;
+        output.check_size((input.size() as Smpl * self.ratio).floor() as usize)?;
 
         unsafe { ffi::aubio_resampler_do(self.resampler, input.as_ptr(), output.as_mut_ptr()) }
         Ok(())

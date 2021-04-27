@@ -1,7 +1,7 @@
 use crate::{
     check_init, ffi,
     vec::{FVec, FVecMut},
-    AsNativeStr, OnsetMode, Result, Status,
+    AsNativeStr, OnsetMode, Result, Smpl, Status,
 };
 
 /**
@@ -51,7 +51,7 @@ impl Tempo {
     /**
      * Set tempo detection silence threshold
      */
-    pub fn with_silence(mut self, silence: f32) -> Self {
+    pub fn with_silence(mut self, silence: Smpl) -> Self {
         self.set_silence(silence);
         self
     }
@@ -59,7 +59,7 @@ impl Tempo {
     /**
      * Set tempo detection peak picking threshold
      */
-    pub fn with_threshold(mut self, threshold: f32) -> Self {
+    pub fn with_threshold(mut self, threshold: Smpl) -> Self {
         self.set_threshold(threshold);
         self
     }
@@ -75,7 +75,7 @@ impl Tempo {
     /**
      * Set current delay in seconds
      */
-    pub fn with_delay_s(mut self, delay: f32) -> Self {
+    pub fn with_delay_s(mut self, delay: Smpl) -> Self {
         self.set_delay_s(delay);
         self
     }
@@ -83,7 +83,7 @@ impl Tempo {
     /**
      * Set current delay in milliseconds
      */
-    pub fn with_delay_ms(mut self, delay: f32) -> Self {
+    pub fn with_delay_ms(mut self, delay: Smpl) -> Self {
         self.set_delay_ms(delay);
         self
     }
@@ -118,11 +118,11 @@ impl Tempo {
     /**
      * Execute tempo detection
      */
-    pub fn do_result<'i, I>(&mut self, input: I) -> Result<f32>
+    pub fn do_result<'i, I>(&mut self, input: I) -> Result<Smpl>
     where
         I: Into<FVec<'i>>,
     {
-        let mut output = [0f32; 1];
+        let mut output = [0.; 1];
         self.do_(input, &mut output)?;
         Ok(output[0])
     }
@@ -137,21 +137,21 @@ impl Tempo {
     /**
      * Get the time of the latest beat detected, in seconds
      */
-    pub fn get_last_s(&self) -> f32 {
+    pub fn get_last_s(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_last_s(self.tempo) }
     }
 
     /**
      * Get the time of the latest beat detected, in milliseconds
      */
-    pub fn get_last_ms(&self) -> f32 {
+    pub fn get_last_ms(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_last_ms(self.tempo) }
     }
 
     /**
      * Set tempo detection silence threshold
      */
-    pub fn set_silence(&mut self, silence: f32) {
+    pub fn set_silence(&mut self, silence: Smpl) {
         unsafe {
             ffi::aubio_tempo_set_silence(self.tempo, silence);
         }
@@ -160,14 +160,14 @@ impl Tempo {
     /**
      * Get tempo detection silence threshold
      */
-    pub fn get_silence(&self) -> f32 {
+    pub fn get_silence(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_silence(self.tempo) }
     }
 
     /**
      * Set tempo detection peak picking threshold
      */
-    pub fn set_threshold(&mut self, threshold: f32) {
+    pub fn set_threshold(&mut self, threshold: Smpl) {
         unsafe {
             ffi::aubio_tempo_set_threshold(self.tempo, threshold);
         }
@@ -176,7 +176,7 @@ impl Tempo {
     /**
      * Get tempo peak picking threshold
      */
-    pub fn get_threshold(&self) -> f32 {
+    pub fn get_threshold(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_threshold(self.tempo) }
     }
 
@@ -190,21 +190,21 @@ impl Tempo {
     /**
      * Get the current beat period in seconds
      */
-    pub fn get_period_s(&self) -> f32 {
+    pub fn get_period_s(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_period_s(self.tempo) }
     }
 
     /**
      * Get the current tempo
      */
-    pub fn get_bpm(&self) -> f32 {
+    pub fn get_bpm(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_bpm(self.tempo) }
     }
 
     /**
      * Get the current tempo confidence
      */
-    pub fn get_confidence(&self) -> f32 {
+    pub fn get_confidence(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_confidence(self.tempo) }
     }
 
@@ -227,7 +227,7 @@ impl Tempo {
     /**
      * Get position of last tatum in samples
      */
-    pub fn get_last_tatum(&self) -> f32 {
+    pub fn get_last_tatum(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_last_tatum(self.tempo) }
     }
 
@@ -250,7 +250,7 @@ impl Tempo {
     /**
      * Set current delay in seconds
      */
-    pub fn set_delay_s(&mut self, delay: f32) {
+    pub fn set_delay_s(&mut self, delay: Smpl) {
         unsafe {
             ffi::aubio_tempo_set_delay_s(self.tempo, delay);
         }
@@ -259,14 +259,14 @@ impl Tempo {
     /**
      * Get current delay in seconds
      */
-    pub fn get_delay_s(&self) -> f32 {
+    pub fn get_delay_s(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_delay_s(self.tempo) }
     }
 
     /**
      * Set current delay in milliseconds
      */
-    pub fn set_delay_ms(&mut self, delay: f32) {
+    pub fn set_delay_ms(&mut self, delay: Smpl) {
         unsafe {
             ffi::aubio_tempo_set_delay_ms(self.tempo, delay);
         }
@@ -275,7 +275,7 @@ impl Tempo {
     /**
      * Get current delay in milliseconds
      */
-    pub fn get_delay_ms(&self) -> f32 {
+    pub fn get_delay_ms(&self) -> Smpl {
         unsafe { ffi::aubio_tempo_get_delay_ms(self.tempo) }
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
     check_init, ffi,
     vec::{FVec, FVecMut},
-    Result, Status,
+    Result, Smpl, Status,
 };
 
 /**
@@ -9,12 +9,12 @@ use crate::{
  */
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Note {
-    pub pitch: f32,
-    pub velocity: f32,
+    pub pitch: Smpl,
+    pub velocity: Smpl,
 }
 
 impl Note {
-    fn parse(values: &[f32; 3]) -> Vec<Self> {
+    fn parse(values: &[Smpl; 3]) -> Vec<Self> {
         let mut notes = Vec::new();
 
         if values[2] != 0.0 {
@@ -75,7 +75,7 @@ impl Notes {
     /**
      * Set notes detection silence threshold
      */
-    pub fn with_silence(mut self, silence: f32) -> Self {
+    pub fn with_silence(mut self, silence: Smpl) -> Self {
         self.set_silence(silence);
         self
     }
@@ -83,7 +83,7 @@ impl Notes {
     /**
      * Set notes detection minimum inter-onset interval, in millisecond
      */
-    pub fn with_minioi_ms(mut self, minioi: f32) -> Self {
+    pub fn with_minioi_ms(mut self, minioi: Smpl) -> Self {
         self.set_minioi_ms(minioi);
         self
     }
@@ -91,7 +91,7 @@ impl Notes {
     /**
      * Set note release drop level, in dB
      */
-    pub fn with_release_drop(mut self, release_drop: f32) -> Self {
+    pub fn with_release_drop(mut self, release_drop: Smpl) -> Self {
         self.set_release_drop(release_drop);
         self
     }
@@ -137,7 +137,7 @@ impl Notes {
     where
         I: Into<FVec<'i>>,
     {
-        let mut output = [0f32; 3];
+        let mut output = [0.; 3];
         self.do_(input, output.as_mut())?;
         Ok(Note::parse(&output))
     }
@@ -145,7 +145,7 @@ impl Notes {
     /**
      * Set notes detection silence threshold
      */
-    pub fn set_silence(&mut self, silence: f32) {
+    pub fn set_silence(&mut self, silence: Smpl) {
         unsafe {
             ffi::aubio_notes_set_silence(self.notes, silence);
         }
@@ -154,14 +154,14 @@ impl Notes {
     /**
      * Get notes detection silence threshold
      */
-    pub fn get_silence(&self) -> f32 {
+    pub fn get_silence(&self) -> Smpl {
         unsafe { ffi::aubio_notes_get_silence(self.notes) }
     }
 
     /**
      * Set notes detection minimum inter-onset interval, in millisecond
      */
-    pub fn set_minioi_ms(&mut self, minioi: f32) {
+    pub fn set_minioi_ms(&mut self, minioi: Smpl) {
         unsafe {
             ffi::aubio_notes_set_minioi_ms(self.notes, minioi);
         }
@@ -170,14 +170,14 @@ impl Notes {
     /**
      * Get notes detection minimum inter-onset interval, in millisecond
      */
-    pub fn get_minioi_ms(&self) -> f32 {
+    pub fn get_minioi_ms(&self) -> Smpl {
         unsafe { ffi::aubio_notes_get_minioi_ms(self.notes) }
     }
 
     /**
      * Set note release drop level, in dB
      */
-    pub fn set_release_drop(&mut self, release_drop: f32) {
+    pub fn set_release_drop(&mut self, release_drop: Smpl) {
         unsafe {
             ffi::aubio_notes_set_release_drop(self.notes, release_drop);
         }
@@ -186,7 +186,7 @@ impl Notes {
     /**
      * Get notes release drop level, in dB
      */
-    pub fn get_release_drop(&self) -> f32 {
+    pub fn get_release_drop(&self) -> Smpl {
         unsafe { ffi::aubio_notes_get_release_drop(self.notes) }
     }
 }
