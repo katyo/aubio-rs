@@ -6,7 +6,12 @@ This crate provides generated unsafe Rust bindings to [_aubio_](//github.com/aub
 Probably this isn't that you really need. See [safe bindings](https://crates.io/crates/aubio-rs).
  */
 
-#![allow(non_upper_case_globals, non_camel_case_types, non_snake_case)]
+#![allow(
+    non_upper_case_globals,
+    non_camel_case_types,
+    non_snake_case,
+    clippy::redundant_static_lifetimes // TODO: Remove later when bindgen resolve this issue
+)]
 #![cfg_attr(test, allow(deref_nullptr))]
 
 #[cfg(feature = "bindgen")]

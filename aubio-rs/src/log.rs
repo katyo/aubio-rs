@@ -37,16 +37,12 @@ pub enum LogLevel {
 }
 
 impl LogLevel {
-    fn from_ffi(level: ffi::sint_t) -> Option<Self> {
-        use self::LogLevel::*;
-        Some(match level as u32 {
-            ffi::aubio_log_level_AUBIO_LOG_ERR => Error,
-            ffi::aubio_log_level_AUBIO_LOG_INF => Info,
-            ffi::aubio_log_level_AUBIO_LOG_MSG => Message,
-            ffi::aubio_log_level_AUBIO_LOG_DBG => Debug,
-            ffi::aubio_log_level_AUBIO_LOG_WRN => Warning,
-            _ => return None,
-        })
+    fn from_ffi(level: ffi::aubio_log_level) -> Option<Self> {
+        if level < ffi::aubio_log_level_AUBIO_LOG_LAST_LEVEL {
+            Some(unsafe { core::mem::transmute(level) })
+        } else {
+            None
+        }
     }
 }
 
@@ -190,10 +186,10 @@ impl Log {
 }
 
 #[cfg(feature = "log")]
-pub use self::log::LogLogger;
+pub use log_impl::LogLogger;
 
 #[cfg(feature = "log")]
-mod log {
+mod log_impl {
     use super::{LogLevel, Logger};
     use log::{log, Level};
 
@@ -228,9 +224,9 @@ mod log {
         }
     }
 
-    impl Into<Level> for LogLevel {
-        fn into(self) -> Level {
-            match self {
+    impl From<LogLevel> for Level {
+        fn from(level: LogLevel) -> Self {
+            match level {
                 LogLevel::Error => Level::Error,
                 LogLevel::Warning => Level::Warn,
                 LogLevel::Message => Level::Info,
@@ -248,7 +244,7 @@ where
     assert!(!data.is_null());
 
     let logger = unsafe { &mut *(data as *mut T) };
-    let level = LogLevel::from_ffi(level).unwrap();
+    let level = LogLevel::from_ffi(level as _).unwrap();
     let message = unsafe { CStr::from_ptr(message).to_str().unwrap() };
 
     logger.log(level, message);

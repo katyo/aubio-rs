@@ -451,6 +451,7 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_from_fmat() {
         let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
         let fmat: FMat<_> = x.into();
