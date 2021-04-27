@@ -1,7 +1,7 @@
 use crate::{
     check_init, ffi,
     vec::{FVec, FVecMut},
-    AsNativeStr, Error, Result, SpecMethod, Status,
+    AsNativeStr, Error, Result, Smpl, SpecMethod, Status,
 };
 
 use std::{
@@ -201,7 +201,7 @@ impl Onset {
     /**
      * Set or disable log compression
      */
-    pub fn with_compression(mut self, lambda: f32) -> Self {
+    pub fn with_compression(mut self, lambda: Smpl) -> Self {
         self.set_compression(lambda);
         self
     }
@@ -209,7 +209,7 @@ impl Onset {
     /**
      * Set onset detection silence threshold
      */
-    pub fn with_silence(mut self, silence: f32) -> Self {
+    pub fn with_silence(mut self, silence: Smpl) -> Self {
         self.set_silence(silence);
         self
     }
@@ -217,7 +217,7 @@ impl Onset {
     /**
      * Set onset detection peak picking threshold
      */
-    pub fn with_threshold(mut self, threshold: f32) -> Self {
+    pub fn with_threshold(mut self, threshold: Smpl) -> Self {
         self.set_threshold(threshold);
         self
     }
@@ -233,7 +233,7 @@ impl Onset {
     /**
      * Set minimum inter onset interval in seconds
      */
-    pub fn with_minioi_s(mut self, minioi: f32) -> Self {
+    pub fn with_minioi_s(mut self, minioi: Smpl) -> Self {
         self.set_minioi_s(minioi);
         self
     }
@@ -241,7 +241,7 @@ impl Onset {
     /**
      * Set minimum inter onset interval in milliseconds
      */
-    pub fn with_minioi_ms(mut self, minioi: f32) -> Self {
+    pub fn with_minioi_ms(mut self, minioi: Smpl) -> Self {
         self.set_minioi_ms(minioi);
         self
     }
@@ -257,7 +257,7 @@ impl Onset {
     /**
      * Set delay in seconds
      */
-    pub fn with_delay_s(mut self, delay: f32) -> Self {
+    pub fn with_delay_s(mut self, delay: Smpl) -> Self {
         self.set_delay_s(delay);
         self
     }
@@ -265,7 +265,7 @@ impl Onset {
     /**
      * Set delay in milliseconds
      */
-    pub fn with_delay_ms(mut self, delay: f32) -> Self {
+    pub fn with_delay_ms(mut self, delay: Smpl) -> Self {
         self.set_delay_ms(delay);
         self
     }
@@ -301,11 +301,11 @@ impl Onset {
     /**
      * Execute onset detection
      */
-    pub fn do_result<'i, I>(&mut self, input: I) -> Result<f32>
+    pub fn do_result<'i, I>(&mut self, input: I) -> Result<Smpl>
     where
         I: Into<FVec<'i>>,
     {
-        let mut onset = [0f32; 1];
+        let mut onset = [0.; 1];
         self.do_(input, &mut onset)?;
         Ok(onset[0])
     }
@@ -327,14 +327,14 @@ impl Onset {
     /**
      * Get the time of the latest onset detected, in seconds
      */
-    pub fn get_last_s(&self) -> f32 {
+    pub fn get_last_s(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_last_s(self.onset) }
     }
 
     /**
      * Get the time of the latest onset detected, in milliseconds
      */
-    pub fn get_last_ms(&self) -> f32 {
+    pub fn get_last_ms(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_last_ms(self.onset) }
     }
 
@@ -357,7 +357,7 @@ impl Onset {
     /**
      * Set or disable log compression
      */
-    pub fn set_compression(&mut self, lambda: f32) {
+    pub fn set_compression(&mut self, lambda: Smpl) {
         unsafe {
             ffi::aubio_onset_set_compression(self.onset, lambda);
         }
@@ -366,14 +366,14 @@ impl Onset {
     /**
      * Get onset detection log compression
      */
-    pub fn get_compression(&self) -> f32 {
+    pub fn get_compression(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_compression(self.onset) }
     }
 
     /**
      * Set onset detection silence threshold
      */
-    pub fn set_silence(&mut self, silence: f32) {
+    pub fn set_silence(&mut self, silence: Smpl) {
         unsafe {
             ffi::aubio_onset_set_silence(self.onset, silence);
         }
@@ -382,28 +382,28 @@ impl Onset {
     /**
      * Get onset detection silence threshold
      */
-    pub fn get_silence(&self) -> f32 {
+    pub fn get_silence(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_silence(self.onset) }
     }
 
     /**
      * Get onset detection function
      */
-    pub fn get_descriptor(&self) -> f32 {
+    pub fn get_descriptor(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_descriptor(self.onset) }
     }
 
     /**
      * Get thresholded onset detection function
      */
-    pub fn get_thresholded_descriptor(&self) -> f32 {
+    pub fn get_thresholded_descriptor(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_thresholded_descriptor(self.onset) }
     }
 
     /**
      * Set onset detection peak picking threshold
      */
-    pub fn set_threshold(&mut self, threshold: f32) {
+    pub fn set_threshold(&mut self, threshold: Smpl) {
         unsafe {
             ffi::aubio_onset_set_threshold(self.onset, threshold);
         }
@@ -412,7 +412,7 @@ impl Onset {
     /**
      * Get onset peak picking threshold
      */
-    pub fn get_threshold(&self) -> f32 {
+    pub fn get_threshold(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_threshold(self.onset) }
     }
 
@@ -435,7 +435,7 @@ impl Onset {
     /**
      * Set minimum inter onset interval in seconds
      */
-    pub fn set_minioi_s(&mut self, minioi: f32) {
+    pub fn set_minioi_s(&mut self, minioi: Smpl) {
         unsafe {
             ffi::aubio_onset_set_minioi_s(self.onset, minioi);
         }
@@ -444,14 +444,14 @@ impl Onset {
     /**
      * Get minimum inter onset interval in seconds
      */
-    pub fn get_minioi_s(&self) -> f32 {
+    pub fn get_minioi_s(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_minioi_s(self.onset) }
     }
 
     /**
      * Set minimum inter onset interval in milliseconds
      */
-    pub fn set_minioi_ms(&mut self, minioi: f32) {
+    pub fn set_minioi_ms(&mut self, minioi: Smpl) {
         unsafe {
             ffi::aubio_onset_set_minioi_ms(self.onset, minioi);
         }
@@ -460,7 +460,7 @@ impl Onset {
     /**
      * Get minimum inter onset interval in milliseconds
      */
-    pub fn get_minioi_ms(&self) -> f32 {
+    pub fn get_minioi_ms(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_minioi_ms(self.onset) }
     }
 
@@ -483,7 +483,7 @@ impl Onset {
     /**
      * Set delay in seconds
      */
-    pub fn set_delay_s(&mut self, delay: f32) {
+    pub fn set_delay_s(&mut self, delay: Smpl) {
         unsafe {
             ffi::aubio_onset_set_delay_s(self.onset, delay);
         }
@@ -492,14 +492,14 @@ impl Onset {
     /**
      * Get delay in seconds
      */
-    pub fn get_delay_s(&self) -> f32 {
+    pub fn get_delay_s(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_delay_s(self.onset) }
     }
 
     /**
      * Set delay in milliseconds
      */
-    pub fn set_delay_ms(&mut self, delay: f32) {
+    pub fn set_delay_ms(&mut self, delay: Smpl) {
         unsafe {
             ffi::aubio_onset_set_delay_ms(self.onset, delay);
         }
@@ -508,7 +508,7 @@ impl Onset {
     /**
      * Get delay in milliseconds
      */
-    pub fn get_delay_ms(&self) -> f32 {
+    pub fn get_delay_ms(&self) -> Smpl {
         unsafe { ffi::aubio_onset_get_delay_ms(self.onset) }
     }
 

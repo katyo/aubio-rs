@@ -1,7 +1,7 @@
 use crate::{
     check_init, ffi,
     vec::{CVec, FVecMut},
-    Result, Status,
+    Result, Smpl, Status,
 };
 
 /**
@@ -63,7 +63,7 @@ impl MFCC {
     /**
      * Set power parameter
      */
-    pub fn with_power(mut self, power: f32) -> Self {
+    pub fn with_power(mut self, power: Smpl) -> Self {
         self.set_power(power);
         self
     }
@@ -71,7 +71,7 @@ impl MFCC {
     /**
      * Set scaling parameter
      */
-    pub fn with_scale(mut self, scale: f32) -> Self {
+    pub fn with_scale(mut self, scale: Smpl) -> Self {
         self.set_scale(scale);
         self
     }
@@ -84,7 +84,7 @@ impl MFCC {
      *
      * The filterbank will be initialized with bands linearly spaced in the mel scale, from `fmin` to `fmax`.
      */
-    pub fn with_mel_coeffs(mut self, fmin: f32, fmax: f32) -> Self {
+    pub fn with_mel_coeffs(mut self, fmin: Smpl, fmax: Smpl) -> Self {
         self.set_mel_coeffs(fmin, fmax);
         self
     }
@@ -97,7 +97,7 @@ impl MFCC {
      *
      * The bank of filters will be initalized to to cover linearly spaced bands in the Htk mel scale, from `fmin` to `fmax`.
      */
-    pub fn with_mel_coeffs_htk(mut self, fmin: f32, fmax: f32) -> Self {
+    pub fn with_mel_coeffs_htk(mut self, fmin: Smpl, fmax: Smpl) -> Self {
         self.set_mel_coeffs_htk(fmin, fmax);
         self
     }
@@ -138,7 +138,7 @@ impl MFCC {
     /**
      * Set power parameter
      */
-    pub fn set_power(&mut self, power: f32) {
+    pub fn set_power(&mut self, power: Smpl) {
         unsafe {
             ffi::aubio_mfcc_set_power(self.mfcc, power);
         }
@@ -147,14 +147,14 @@ impl MFCC {
     /**
      * Get power parameter
      */
-    pub fn get_power(&self) -> f32 {
+    pub fn get_power(&self) -> Smpl {
         unsafe { ffi::aubio_mfcc_get_power(self.mfcc) }
     }
 
     /**
      * Set scaling parameter
      */
-    pub fn set_scale(&mut self, scale: f32) {
+    pub fn set_scale(&mut self, scale: Smpl) {
         unsafe {
             ffi::aubio_mfcc_set_scale(self.mfcc, scale);
         }
@@ -163,7 +163,7 @@ impl MFCC {
     /**
      * Get scaling parameter
      */
-    pub fn get_scale(&self) -> f32 {
+    pub fn get_scale(&self) -> Smpl {
         unsafe { ffi::aubio_mfcc_get_scale(self.mfcc) }
     }
 
@@ -175,7 +175,7 @@ impl MFCC {
      *
      * The filterbank will be initialized with bands linearly spaced in the mel scale, from `fmin` to `fmax`.
      */
-    pub fn set_mel_coeffs(&mut self, fmin: f32, fmax: f32) {
+    pub fn set_mel_coeffs(&mut self, fmin: Smpl, fmax: Smpl) {
         unsafe {
             ffi::aubio_mfcc_set_mel_coeffs(self.mfcc, fmin, fmax);
         }
@@ -189,7 +189,7 @@ impl MFCC {
      *
      * The bank of filters will be initalized to to cover linearly spaced bands in the Htk mel scale, from `fmin` to `fmax`.
      */
-    pub fn set_mel_coeffs_htk(&mut self, fmin: f32, fmax: f32) {
+    pub fn set_mel_coeffs_htk(&mut self, fmin: Smpl, fmax: Smpl) {
         unsafe {
             ffi::aubio_mfcc_set_mel_coeffs_htk(self.mfcc, fmin, fmax);
         }

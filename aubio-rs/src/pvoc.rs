@@ -131,7 +131,7 @@ mod test {
     fn test() {
         const WIN_S: usize = 32; // window size
         const HOP_S: usize = WIN_S / 4; // hop size
-        let in_ = [1f32; HOP_S]; // input buffer
+        let in_ = [1.; HOP_S]; // input buffer
         let mut fftgrain = carr!(WIN_S); // fft norm and phase
         let mut out = farr!(HOP_S); // output buffer
                                     // allocate fft and other memory space

@@ -256,12 +256,12 @@ mod test {
         const ITERS: usize = 100; // number of iterations
         const WIN: usize = 512; // window size
 
-        let mut in_ = [0f32; WIN]; // input buffer
-                                   //let mut in_ = farr!(WIN); // input buffer
-                                   //let mut fftgrain = [0f32; (WIN+1)*2]; // fft norm and phase
+        let mut in_ = [0.; WIN]; // input buffer
+                                 //let mut in_ = farr!(WIN); // input buffer
+                                 //let mut fftgrain = [0.; (WIN+1)*2]; // fft norm and phase
         let mut fftgrain = carr!(WIN); // fft norm and phase
-        let mut out = [0.0; WIN]; // output buffer
-                                  // create fft object
+        let mut out = [0.; WIN]; // output buffer
+                                 // create fft object
         let mut fft = FFT::new(WIN).unwrap();
 
         // fill input with some data

@@ -77,16 +77,21 @@ pub use self::types::*;
 pub use self::utils::*;
 pub use self::winfunc::*;
 
+/**
+ * Sample data type
+ */
+pub type Smpl = ffi::smpl_t;
+
 #[macro_export]
 macro_rules! farr {
     ($len: expr) => {
-        [0f32; $len]
+        [0. as $crate::Smpl; $len]
     };
 }
 
 #[macro_export]
 macro_rules! carr {
     ($len: expr) => {
-        [0f32; $len + 2]
+        [0. as $crate::Smpl; $len + 2]
     };
 }

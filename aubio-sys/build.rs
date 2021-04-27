@@ -9,12 +9,13 @@ fn main() {
     use std::env;
 
     #[cfg(any(not(feature = "bindgen"), feature = "update-bindings"))]
-    fn bindings_filename() -> String {
+    fn bindings_filename(double: bool) -> String {
         format!(
-            "{}-{}-{}.rs",
+            "{}-{}-{}_{}.rs",
             env::var("CARGO_CFG_TARGET_ARCH").unwrap(),
             env::var("CARGO_CFG_TARGET_OS").unwrap(),
-            env::var("CARGO_CFG_TARGET_ENV").unwrap()
+            env::var("CARGO_CFG_TARGET_ENV").unwrap(),
+            if double { "double" } else { "single" },
         )
     }
 
@@ -25,7 +26,7 @@ fn main() {
 
     #[cfg(not(feature = "bindgen"))]
     {
-        let bindings_file = bindings_filename();
+        let bindings_file = bindings_filename(cfg!(feature = "double"));
 
         if bindings_filepath(&bindings_file).as_ref().is_file() {
             println!("cargo:rustc-env=AUBIO_BINDINGS={}", bindings_file);
@@ -43,14 +44,21 @@ fn main() {
     {
         let inc_dirs = try_find_library_inc_dirs().unwrap_or_else(|| vec![src_dir.join("src")]);
 
-        let bindings = out_dir.join("bindings.rs");
-
-        generate_bindings(inc_dirs, &bindings);
+        #[cfg(not(feature = "update-bindings"))]
+        {
+            let bindings = out_dir.join("bindings.rs");
+            generate_bindings(inc_dirs, &bindings, cfg!(feature = "double"));
+        }
 
         #[cfg(feature = "update-bindings")]
         {
-            let out_path = bindings_filepath(&bindings_filename());
-            update_bindings(&bindings, &out_path);
+            for double in &[false, true] {
+                let bindings = out_dir.join("bindings.rs");
+                generate_bindings(&inc_dirs, &bindings, *double);
+
+                let out_path = bindings_filepath(&bindings_filename(*double));
+                update_bindings(&bindings, &out_path, *double);
+            }
         }
     }
 
@@ -67,6 +75,7 @@ fn main() {
 fn generate_bindings<P: AsRef<Path>>(
     inc_dirs: impl IntoIterator<Item = P>,
     out_file: impl AsRef<Path>,
+    double: bool,
 ) {
     let bindings = bindgen::Builder::default()
         .detect_include_paths(true)
@@ -75,6 +84,7 @@ fn generate_bindings<P: AsRef<Path>>(
                 .into_iter()
                 .map(|dir| format!("-I{}", dir.as_ref().display())),
         )
+        .clang_arg(if double { "-DHAVE_AUBIO_DOUBLE" } else { "" })
         .header_contents("library.h", "#include <aubio.h>")
         .generate()
         .expect("Generated bindings.");
@@ -83,7 +93,7 @@ fn generate_bindings<P: AsRef<Path>>(
 }
 
 #[cfg(feature = "update-bindings")]
-fn update_bindings(bind_file: impl AsRef<Path>, dest_file: impl AsRef<Path>) {
+fn update_bindings(bind_file: impl AsRef<Path>, dest_file: impl AsRef<Path>, double: bool) {
     use std::{env, fs, io::Write};
 
     let dest_file = dest_file.as_ref();
@@ -97,7 +107,13 @@ fn update_bindings(bind_file: impl AsRef<Path>, dest_file: impl AsRef<Path>) {
             .append(true)
             .open(github_env)
             .unwrap();
-        writeln!(env_file, "AUBIO_SYS_BINDINGS_FILE={}", dest_file.display()).unwrap();
+        writeln!(
+            env_file,
+            "AUBIO_SYS_BINDINGS_FILE_{}={}",
+            if double { "DOUBLE" } else { "SINGLE" },
+            dest_file.display()
+        )
+        .unwrap();
     }
 }
 

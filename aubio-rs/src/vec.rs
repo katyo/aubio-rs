@@ -2,9 +2,7 @@
  * Vector data wrappers
  */
 
-use crate::Error;
-
-use crate::{ffi, Result, Status};
+use crate::{ffi, Error, Result, Smpl, Status};
 
 use std::{
     marker::PhantomData,
@@ -47,7 +45,7 @@ impl<'a> FVec<'a> {
     }
 }
 
-impl<'a, T: AsRef<[f32]>> From<T> for FVec<'a> {
+impl<'a, T: AsRef<[Smpl]>> From<T> for FVec<'a> {
     fn from(data: T) -> Self {
         let data = data.as_ref();
         Self {
@@ -95,7 +93,7 @@ impl<'a> FVecMut<'a> {
     }
 }
 
-impl<'a, T: AsMut<[f32]>> From<T> for FVecMut<'a> {
+impl<'a, T: AsMut<[Smpl]>> From<T> for FVecMut<'a> {
     fn from(mut data: T) -> Self {
         let data = data.as_mut();
         Self {
@@ -118,7 +116,7 @@ pub struct CVec<'a> {
 }
 
 impl<'a> CVec<'a> {
-    pub fn from_parts<T: AsRef<[f32]>>(norm: T, phas: T) -> Result<Self> {
+    pub fn from_parts<T: AsRef<[Smpl]>>(norm: T, phas: T) -> Result<Self> {
         let norm = norm.as_ref();
         let phas = phas.as_ref();
         #[cfg(feature = "check-size")]
@@ -145,11 +143,11 @@ impl<'a> CVec<'a> {
         self.cvec.length as usize
     }
 
-    pub fn norm(&self) -> &[f32] {
+    pub fn norm(&self) -> &[Smpl] {
         unsafe { std::slice::from_raw_parts(self.cvec.norm, self.size()) }
     }
 
-    pub fn phas(&self) -> &[f32] {
+    pub fn phas(&self) -> &[Smpl] {
         unsafe { std::slice::from_raw_parts(self.cvec.phas, self.size()) }
     }
 
@@ -170,7 +168,7 @@ impl<'a> CVec<'a> {
     }
 }
 
-impl<'a, T: AsRef<[f32]>> From<T> for CVec<'a> {
+impl<'a, T: AsRef<[Smpl]>> From<T> for CVec<'a> {
     fn from(data: T) -> Self {
         let data = data.as_ref();
         let (norm, phas) = data.split_at(data.len() / 2);
@@ -188,7 +186,7 @@ pub struct CVecMut<'a> {
 }
 
 impl<'a> CVecMut<'a> {
-    pub fn from_parts<T: AsMut<[f32]>>(mut norm: T, mut phas: T) -> Result<Self> {
+    pub fn from_parts<T: AsMut<[Smpl]>>(mut norm: T, mut phas: T) -> Result<Self> {
         let norm = norm.as_mut();
         let phas = phas.as_mut();
         #[cfg(feature = "check-size")]
@@ -207,7 +205,7 @@ impl<'a> CVecMut<'a> {
         })
     }
 
-    pub(crate) fn from_norm(norm: &mut [f32]) -> Self {
+    pub(crate) fn from_norm(norm: &mut [Smpl]) -> Self {
         Self {
             cvec: ffi::cvec_t {
                 length: norm.len() as ffi::uint_t,
@@ -218,7 +216,7 @@ impl<'a> CVecMut<'a> {
         }
     }
 
-    pub(crate) fn from_phas(phas: &mut [f32]) -> Self {
+    pub(crate) fn from_phas(phas: &mut [Smpl]) -> Self {
         Self {
             cvec: ffi::cvec_t {
                 length: phas.len() as ffi::uint_t,
@@ -254,7 +252,7 @@ impl<'a> CVecMut<'a> {
     }
 }
 
-impl<'a, T: AsMut<[f32]>> From<T> for CVecMut<'a> {
+impl<'a, T: AsMut<[Smpl]>> From<T> for CVecMut<'a> {
     fn from(mut data: T) -> Self {
         let data = data.as_mut();
         let (norm, phas) = data.split_at_mut(data.len() / 2);
@@ -284,7 +282,7 @@ impl<'a> DerefMut for CVecNormMut<'a> {
     }
 }
 
-impl<'a, T: AsMut<[f32]>> From<T> for CVecNormMut<'a> {
+impl<'a, T: AsMut<[Smpl]>> From<T> for CVecNormMut<'a> {
     fn from(mut data: T) -> Self {
         let norm = data.as_mut();
         Self {
@@ -315,7 +313,7 @@ impl<'a> DerefMut for CVecPhasMut<'a> {
     }
 }
 
-impl<'a, T: AsMut<[f32]>> From<T> for CVecPhasMut<'a> {
+impl<'a, T: AsMut<[Smpl]>> From<T> for CVecPhasMut<'a> {
     fn from(mut data: T) -> Self {
         let phas = data.as_mut();
         Self {
@@ -348,7 +346,7 @@ impl<'a, X> FMat<'a, X> {
     }
 
     /// Read sample value in a buffer
-    pub fn get_sample(&self, channel: usize, position: usize) -> Result<f32> {
+    pub fn get_sample(&self, channel: usize, position: usize) -> Result<Smpl> {
         if channel >= self.height() || position >= self.length() {
             return Err(Error::InvalidArg);
         }
@@ -361,7 +359,7 @@ impl<'a, X> FMat<'a, X> {
         })
     }
 
-    pub fn get_vec(&self) -> Vec<&mut [f32]> {
+    pub fn get_vec(&self) -> Vec<&mut [Smpl]> {
         let mut vec = Vec::with_capacity(self.height());
         let mut ptr = self.fmat.data;
         let end = self.fmat.data.wrapping_add(self.height());
@@ -396,9 +394,9 @@ impl<'a> FMat<'a, ()> {
     }
 }
 
-pub type FMatVecs = Vec<*const f32>;
+pub type FMatVecs = Vec<*const Smpl>;
 
-impl<'a, T: AsRef<[&'a [f32]]>> From<T> for FMat<'a, FMatVecs> {
+impl<'a, T: AsRef<[&'a [Smpl]]>> From<T> for FMat<'a, FMatVecs> {
     /**
      * Create a matrix from a `FMatVecs`
      *
@@ -446,14 +444,14 @@ mod test {
     #[should_panic]
     #[cfg(feature = "check-size")]
     fn test_from_fmat_wrong_size() {
-        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0, 6.0], &[7.0, 8.0, 9.0]];
+        let x: &[&[Smpl]] = &[&[1.0, 2.0], &[4.0, 5.0, 6.0], &[7.0, 8.0, 9.0]];
         let _fmat: FMat<_> = x.into();
     }
 
     #[test]
     #[allow(clippy::float_cmp)]
     fn test_from_fmat() {
-        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
+        let x: &[&[Smpl]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
         let fmat: FMat<_> = x.into();
         assert_eq!(2, fmat.length());
         assert_eq!(3, fmat.height());
@@ -468,7 +466,7 @@ mod test {
 
     #[test]
     fn test_to_vec() {
-        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
+        let x: &[&[Smpl]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
         let fmat: FMat<_> = x.into();
 
         let matrix = fmat.get_vec();
@@ -478,7 +476,7 @@ mod test {
 
     #[test]
     fn test_get_sample_fmat_wrong_size() {
-        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
+        let x: &[&[Smpl]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
         let fmat: FMat<_> = x.into();
 
         assert_eq!(Err(Error::InvalidArg), fmat.get_sample(70, 80));
@@ -486,7 +484,7 @@ mod test {
 
     #[test]
     fn test_fmat_non_owned() {
-        let x: &[&[f32]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
+        let x: &[&[Smpl]] = &[&[1.0, 2.0], &[4.0, 5.0], &[7.0, 8.0]];
         let fmat: FMat<_> = x.into();
 
         {

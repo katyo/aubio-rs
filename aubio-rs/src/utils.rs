@@ -1,6 +1,7 @@
 use crate::{
     ffi,
     vec::{FVec, FVecMut},
+    Smpl,
 };
 
 /**
@@ -12,21 +13,21 @@ use crate::{
  *
  * Returns equivalent phase wrapped to the unit circle
  */
-pub fn unwrap_2pi(phase: f32) -> f32 {
+pub fn unwrap_2pi(phase: Smpl) -> Smpl {
     unsafe { ffi::aubio_unwrap2pi(phase) }
 }
 
 /**
  * Convert frequency bin to midi value
  */
-pub fn bin_to_midi(bin: f32, sample_rate: f32, fft_size: f32) -> f32 {
+pub fn bin_to_midi(bin: Smpl, sample_rate: Smpl, fft_size: Smpl) -> Smpl {
     unsafe { ffi::aubio_bintomidi(bin, sample_rate, fft_size) }
 }
 
 /**
  * Convert midi value to frequency bin
  */
-pub fn midi_to_bin(midi: f32, sample_rate: f32, fft_size: f32) -> f32 {
+pub fn midi_to_bin(midi: Smpl, sample_rate: Smpl, fft_size: Smpl) -> Smpl {
     unsafe { ffi::aubio_miditobin(midi, sample_rate, fft_size) }
 }
 
@@ -37,7 +38,7 @@ pub fn midi_to_bin(midi: f32, sample_rate: f32, fft_size: f32) -> f32 {
  * - `sample_rate` Sampling rate of the original signal the bin was from
  * - `fft_size` Size of the FFT window used to obtain the frequency bin
  */
-pub fn bin_to_freq(bin: f32, sample_rate: f32, fft_size: f32) -> f32 {
+pub fn bin_to_freq(bin: Smpl, sample_rate: Smpl, fft_size: Smpl) -> Smpl {
     unsafe { ffi::aubio_bintofreq(bin, sample_rate, fft_size) }
 }
 
@@ -50,7 +51,8 @@ pub use self::bin_to_freq as bin_to_hz;
  * - `sample_rate` Sampling rate of the original signal the bin was from
  * - `fft_size` Size of the FFT window used to obtain the frequency bin
  */
-pub fn freq_to_bin(freq: f32, sample_rate: f32, fft_size: f32) -> f32 {
+#[inline]
+pub fn freq_to_bin(freq: Smpl, sample_rate: Smpl, fft_size: Smpl) -> Smpl {
     unsafe { ffi::aubio_freqtobin(freq, sample_rate, fft_size) }
 }
 
@@ -69,7 +71,8 @@ pub use self::freq_to_bin as hz_to_bin;
  *
  * See also `mel_to_hz()`, `hz_to_mel_htk()`.
  */
-pub fn hz_to_mel(freq: f32) -> f32 {
+#[inline]
+pub fn hz_to_mel(freq: Smpl) -> Smpl {
     unsafe { ffi::aubio_hztomel(freq) }
 }
 
@@ -90,7 +93,8 @@ pub fn hz_to_mel(freq: f32) -> f32 {
  * - Malcolm Slaney, *Auditory Toolbox Version 2, Technical Report #1998-010*
  *   https://engineering.purdue.edu/~malcolm/interval/1998-010/
  */
-pub fn mel_to_hz(mel: f32) -> f32 {
+#[inline]
+pub fn mel_to_hz(mel: Smpl) -> Smpl {
     unsafe { ffi::aubio_meltohz(mel) }
 }
 
@@ -112,7 +116,8 @@ pub fn mel_to_hz(mel: f32) -> f32 {
  *   Addison-Wesley. p. 150. ISBN 978-0-201-16520-3.
  * - HTK Speech Recognition Toolkit: http://htk.eng.cam.ac.uk/
  */
-pub fn hz_to_mel_htk(freq: f32) -> f32 {
+#[inline]
+pub fn hz_to_mel_htk(freq: Smpl) -> Smpl {
     unsafe { ffi::aubio_hztomel_htk(freq) }
 }
 
@@ -129,7 +134,8 @@ pub fn hz_to_mel_htk(freq: f32) -> f32 {
  *
  * See also `hz_to_mel_htk()`, `mel_to_hz()`.
  */
-pub fn mel_to_hz_htk(mel: f32) -> f32 {
+#[inline]
+pub fn mel_to_hz_htk(mel: Smpl) -> Smpl {
     unsafe { ffi::aubio_meltohz_htk(mel) }
 }
 
@@ -138,7 +144,8 @@ pub fn mel_to_hz_htk(mel: f32) -> f32 {
  *
  * - `freq` Frequency in Hz to convert
  */
-pub fn freq_to_midi(freq: f32) -> f32 {
+#[inline]
+pub fn freq_to_midi(freq: Smpl) -> Smpl {
     unsafe { ffi::aubio_freqtomidi(freq) }
 }
 
@@ -147,7 +154,8 @@ pub fn freq_to_midi(freq: f32) -> f32 {
  *
  * - `midi` Midi note value to convert (0..128)
  */
-pub fn midi_to_freq(midi: f32) -> f32 {
+#[inline]
+pub fn midi_to_freq(midi: Smpl) -> Smpl {
     unsafe { ffi::aubio_miditofreq(midi) }
 }
 
@@ -159,7 +167,8 @@ pub fn midi_to_freq(midi: f32) -> f32 {
  *
  * - `input` Vector to compute ZCR from
  */
-pub fn zero_crossing_rate<'i, I>(input: I) -> f32
+#[inline]
+pub fn zero_crossing_rate<'i, I>(input: I) -> Smpl
 where
     I: Into<FVec<'i>>,
 {
@@ -174,7 +183,8 @@ where
  *
  * - `input` Vector to compute level from
  */
-pub fn level_lin<'i, I>(input: I) -> f32
+#[inline]
+pub fn level_lin<'i, I>(input: I) -> Smpl
 where
     I: Into<FVec<'i>>,
 {
@@ -190,7 +200,8 @@ where
  *
  * - `input` Vector to compute dB SPL from.
  */
-pub fn db_spl<'i, I>(input: I) -> f32
+#[inline]
+pub fn db_spl<'i, I>(input: I) -> Smpl
 where
     I: Into<FVec<'i>>,
 {
@@ -209,7 +220,8 @@ where
  * - `input` Vector to get level from
  * - `threshold` Threshold in dB SPL
  */
-pub fn silence_detection<'i, I>(input: I, threshold: f32) -> bool
+#[inline]
+pub fn silence_detection<'i, I>(input: I, threshold: Smpl) -> bool
 where
     I: Into<FVec<'i>>,
 {
@@ -223,7 +235,8 @@ where
  * - `input` Vector to get level from
  * - `threshold` Threshold in dB SPL
  */
-pub fn level_detection<'i, I>(input: I, threshold: f32) -> f32
+#[inline]
+pub fn level_detection<'i, I>(input: I, threshold: Smpl) -> Smpl
 where
     I: Into<FVec<'i>>,
 {
@@ -238,7 +251,8 @@ impl<'a> FVec<'a> {
      * - `input` Vector to clamp
      * - `absmax` Maximum value over which input vector elements should be clamped
      */
-    pub fn clamp<'i, I>(input: I, absmax: f32)
+    #[inline]
+    pub fn clamp<'i, I>(input: I, absmax: Smpl)
     where
         I: Into<FVecMut<'i>>,
     {
