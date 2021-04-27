@@ -272,6 +272,10 @@ fn build_library(src_dir: &Path, lib_dir: &Path) {
 
     build.define("HAVE_MEMCPY_HACKS", None);
 
+    if _target_env == "msvc" {
+        build.define("HAVE_WIN_HACKS", None);
+    }
+
     with_header(lib_dir, &mut build, "stdlib.h");
     with_header(lib_dir, &mut build, "stdio.h");
     with_header(lib_dir, &mut build, "complex.h");
