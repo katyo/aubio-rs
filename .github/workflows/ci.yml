@@ -31,6 +31,7 @@ jobs:
 
   doc:
     runs-on: ubuntu-latest
+    needs: cargo-readme
     steps:
       - uses: actions/checkout@v2
         with:
@@ -50,6 +51,25 @@ jobs:
           DOCS_RS: 1
         with:
           command: doc
+      - name: Setup Cargo readme
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/bin/cargo-readme
+          key: ${{ runner.os }}-cargo-readme
+      - name: Generate READMEs
+        run: |
+          cargo readme --no-title --no-indent-headings --no-license --no-badges > README.md
+          (cd sys && cargo readme --no-title --no-indent-headings --no-license --no-badges > README.md)
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          base: ${{ github.head_ref }}
+          commit-message: Updated READMEs
+          branch: update-readmes
+          delete-branch: true
+          title: Update READMEs
+          body: |
+            READMEs should be updated to be consistent with latest changes
 
   check:
     runs-on: ubuntu-latest
@@ -349,15 +369,15 @@ jobs:
           RUST_LOG: bindgen=warn,bindgen::ir=error,bindgen::codegen=error
         with:
           command: build
-          args: --manifest-path aubio-sys/Cargo.toml --target ${{ matrix.target }} --features update-bindings
+          args: --manifest-path sys/Cargo.toml --target ${{ matrix.target }} --features update-bindings
       - name: Upload bindings
         if: matrix.task == 'bindings'
         uses: actions/upload-artifact@v2
         with:
           name: bindings
           path: |
-            aubio-sys/${{ env.AUBIO_SYS_BINDINGS_FILE_SINGLE }}
-            aubio-sys/${{ env.AUBIO_SYS_BINDINGS_FILE_DOUBLE }}
+            sys/${{ env.AUBIO_SYS_BINDINGS_FILE_SINGLE }}
+            sys/${{ env.AUBIO_SYS_BINDINGS_FILE_DOUBLE }}
             LICENSE
             README.md
       - name: Build
@@ -397,6 +417,7 @@ jobs:
           title: Update bindings
           body: |
             Bindings should be updated to be consistent with latest changes
+
   publish:
     if: github.repository == 'katyo/aubio-rs' && startsWith(github.ref, 'refs/tags/')
     needs:
@@ -417,3 +438,19 @@ jobs:
           registry-token: ${{ secrets.CRATES_TOKEN }}
           args: --no-verify
           #dry-run: true
+
+  cargo-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare cache
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: ~/.cargo/bin/cargo-readme
+          key: ${{ runner.os }}-cargo-readme
+      - name: Install cargo readme
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-readme
