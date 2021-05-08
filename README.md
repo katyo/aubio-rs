@@ -1,4 +1,4 @@
-# Aubio library bindings
+# Safe bindings for _aubio_ library
 
 [![github](https://img.shields.io/badge/github-katyo/aubio--rs-8da0cb.svg?style=for-the-badge&logo=github)](https://github.com/katyo/aubio-rs)
 [![crate](https://img.shields.io/crates/v/aubio-rs.svg?style=for-the-badge&color=fc8d62&logo=rust)](https://crates.io/crates/aubio-rs)
@@ -6,7 +6,7 @@
 [![GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-brightgreen.svg?style=for-the-badge)](https://opensource.org/licenses/GPL-3.0)
 [![CI](https://img.shields.io/github/workflow/status/katyo/aubio-rs/Rust?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/katyo/aubio-rs/actions?query=workflow%3ARust)
 
-This projects aims provide safe Rust bindings for [_aubio_](//github.com/aubio/aubio) C library.
+This crate provides safe Rust bindings to [_aubio_](https://github.com/aubio/aubio) C library.
 
 > _Aubio_ is a library to label music and sounds.
 >
@@ -18,33 +18,41 @@ This projects aims provide safe Rust bindings for [_aubio_](//github.com/aubio/a
 > performing pitch detection, tapping the beat and producing midi streams
 > from live audio.
 >
-> aubio provide several algorithms and routines, including:
+> Aubio provide several algorithms and routines, including:
 >
-> * several onset detection methods
-> * different pitch detection methods
-> * tempo tracking and beat detection
-> * MFCC (mel-frequency cepstrum coefficients)
-> * FFT and phase vocoder
-> * up/down-sampling
-> * digital filters (low pass, high pass, and more)
-> * spectral filtering
-> * transient/steady-state separation
-> * sound file read and write access
-> * various mathematics utilities for music applications
+> - several onset detection methods
+> - different pitch detection methods
+> - tempo tracking and beat detection
+> - MFCC (mel-frequency cepstrum coefficients)
+> - FFT and phase vocoder
+> - up/down-sampling
+> - digital filters (low pass, high pass, and more)
+> - spectral filtering
+> - transient/steady-state separation
+> - sound file read and write access
+> - various mathematics utilities for music applications
 >
 > The name _aubio_ comes from audio with a typo: some errors are likely
 > to be found in the results.
 
 ## Crate features
 
-The following features can be used to customize crate configuration:
+The following features can be used to customize configuration:
 
-* __bindgen__ Force generate bindings itself instead of use pre-generated (_useful for unsupported archs_)
-* __builtin__ Force compile builtin _aubio_ C-library
-* __pkg-config__ Use _pkg-config_ to find installed libraries
-* __shared__ Build shared _aubio_ C-library
-* __static__ Build static _aubio_ C-library
-* __fftw3__ Enable using _fftw3_ library
+- __bindgen__ Force generate bindings itself instead of use pre-generated (_useful for unsupported archs_)
+- __builtin__ Force compile builtin _aubio_ C library
+- __pkg-config__ Use _pkg-config_ to find installed libraries
+- __shared__ Build shared _aubio_ C-library
+- __static__ Build static _aubio_ C-library
+- __fftw3__ Enable using _fftw3_ library
+- __intelipp__ Enable using _Intel IPP_ library
+- __accelerate__ Enable using acceleration framework on _apple_ platforms
+- __blas__ Enable using _blas_ library
+- __atlas__ Enable using _atlas_ library
+- __double__ Enable double presicion of audio sample data
 
 When __pkg-config__ feature is used the installed __aubio__ library will be used if found.
+
 To force build and link builtin version you can use __builtin__ feature.
+
+The features such as __fftw3__, __intelipp__, __accelerate__, __blas__, __atlas__ and __double__ is take an effect only for builtin _aubio_ C library.
