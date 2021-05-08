@@ -1,16 +1,55 @@
+[package]
+name = "aubio-rs"
+version = "0.2.0"
+description = "Safe bindings for aubio library to label music and sounds."
+categories = ["external-ffi-bindings", "multimedia::audio"]
+keywords = ["aubio", "audio", "processing", "recognition", "ffi"]
+authors = ["K. <kayo@illumium.org>"]
+license = "GPL-3.0"
+readme = "README.md"
+repository = "https://github.com/katyo/aubio-rs"
+edition = "2018"
+
+[dependencies.aubio-sys]
+version = "0.2.0"
+path = "sys"
+
+[dependencies.log]
+version = "0.4"
+optional = true
+
+[dev-dependencies.hound]
+version = "3.4"
+
+[features]
+default = []
+bindgen = ["aubio-sys/bindgen"]
+builtin = ["aubio-sys/builtin"]
+pkg-config = ["aubio-sys/pkg-config"]
+shared = ["aubio-sys/shared"]
+static = ["aubio-sys/static"]
+fftw3 = ["aubio-sys/fftw3"]
+intelipp = ["aubio-sys/intelipp"]
+double = ["aubio-sys/double"]
+accelerate = ["aubio-sys/accelerate"]
+blas = ["aubio-sys/blas"]
+atlas = ["aubio-sys/atlas"]
+rustdoc = ["aubio-sys/rustdoc"]
+check-size = []
+
+[package.metadata.docs.rs]
+features = ["rustdoc"]
+
 [workspace]
-members = [
-  "aubio-sys",
-  "aubio-rs",
-]
+members = ["sys"]
 
 [profile.release]
 opt-level = 3
 debug = false
 rpath = false
-lto = false
+lto = true
 debug-assertions = false
-codegen-units = 16
+codegen-units = 1
 panic = 'unwind'
 incremental = false
 overflow-checks = false
