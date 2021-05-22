@@ -379,7 +379,6 @@ jobs:
             sys/${{ env.AUBIO_SYS_BINDINGS_FILE_SINGLE }}
             sys/${{ env.AUBIO_SYS_BINDINGS_FILE_DOUBLE }}
             LICENSE
-            README.md
       - name: Build
         uses: actions-rs/cargo@v1
         with:
