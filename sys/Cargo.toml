@@ -1,6 +1,6 @@
 [package]
 name = "aubio-sys"
-version = "0.2.0"
+version = "0.2.1"
 description = "Unsafe bindings for aubio library to label music and sounds."
 categories = ["external-ffi-bindings", "multimedia::audio"]
 keywords = ["aubio", "audio", "processing", "recognition", "ffi"]

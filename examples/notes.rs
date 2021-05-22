@@ -8,7 +8,7 @@
  * Only signed 16-bit mono wav files supported.
  */
 
-use aubio_rs::{Notes, Smpl};
+use aubio::{Notes, Smpl};
 use hound::WavReader;
 use std::io::stdin;
 

@@ -1,6 +1,6 @@
 [package]
-name = "aubio-rs"
-version = "0.2.0"
+name = "aubio"
+version = "0.2.1"
 description = "Safe bindings for aubio library to label music and sounds."
 categories = ["external-ffi-bindings", "multimedia::audio"]
 keywords = ["aubio", "audio", "processing", "recognition", "ffi"]
@@ -11,7 +11,7 @@ repository = "https://github.com/katyo/aubio-rs"
 edition = "2018"
 
 [dependencies.aubio-sys]
-version = "0.2.0"
+version = "0.2.1"
 path = "sys"
 
 [dependencies.log]
