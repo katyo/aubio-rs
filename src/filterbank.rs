@@ -1,7 +1,7 @@
 use crate::{
     check_init, ffi,
-    vec::{CVec, FMat, FMatVecs, FVecMut},
-    Result, Status,
+    vec::{CVec, FMat, FMatVecs, FVec, FVecMut},
+    Result, Smpl, Status,
 };
 
 /**
@@ -49,6 +49,34 @@ impl FilterBank {
         #[cfg(not(feature = "check-size"))]
         {
             Ok(Self { filterbank })
+        }
+    }
+
+    pub fn set_triangle_bands<'f, F>(&mut self, freqs: F, samplerate: Smpl)
+    where
+        F: Into<FVec<'f>>,
+    {
+        let freqs = freqs.into();
+        #[cfg(feature = "check-size")]
+        {
+            if freqs.size() - 2 != self.n_filters {
+                panic!("Invalid number of frequencies for FilterBank");
+            }
+        }
+        unsafe {
+            ffi::aubio_filterbank_set_triangle_bands(self.filterbank, freqs.as_ptr(), samplerate);
+        }
+    }
+
+    pub fn set_mel_coeffs_slaney(&mut self, samplerate: Smpl) {
+        #[cfg(feature = "check-size")]
+        {
+            if self.n_filters != 40 {
+                panic!("Invalid number of filters for FilterBank");
+            }
+        }
+        unsafe {
+            ffi::aubio_filterbank_set_mel_coeffs_slaney(self.filterbank, samplerate);
         }
     }
 
